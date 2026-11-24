@@ -1,0 +1,38 @@
+name: NeuroChip SNN CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify-and-synth:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar ferramentas EDA (Icarus Verilog + Yosys)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog yosys make
+
+      - name: Validar modelo Python (bit-exato)
+        run: make py
+
+      - name: Simular chip completo (AER + STDP)
+        run: make sim_top
+
+      - name: Simular sinal elétrico real (60 Hz + transiente)
+        run: make real_sim
+
+      - name: Simular rede multicamada (2 camadas SNN)
+        run: make sim_multi
+
+      - name: Sintetizar para Tiny Tapeout (ASIC)
+        run: make synth_tt
+
+      - name: Sintetizar rede multicamada
+        run: make synth_multi

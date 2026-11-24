@@ -1,0 +1,11 @@
+# Ambiente virtual Python
+.venv/
+__pycache__/
+*.pyc
+
+# Artefatos de compilação, simulação e síntese
+build/
+*.vcd
+*.dot
+*.svg
+*.out.agents/
