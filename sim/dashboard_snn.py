@@ -259,43 +259,75 @@ with tab4:
 
     h1, h2, h3, h4 = st.columns(4)
     h1.metric("Processo Alvo", "Sky130 (130 nm)")
-    h2.metric("Área do Tile (1x1)", "161.0 × 111.52 µm")
+    h2.metric("Área do Tile (1×1)", "161.0 × 111.52 µm")
     h3.metric("Clock Nominal", "50 MHz (20 ns)")
-    h4.metric("Top Module", "tt_um_neurochip_snn")
+    h4.metric("Células ASIC", r_tt["cells"] if r_tt else 1689)
 
-    # Diagrama visual simplificado do chip e pinout
-    fig_chip = go.Figure()
-    fig_chip.add_shape(type="rect", x0=2, y0=1, x1=8, y1=9, line=dict(width=3), fillcolor="rgba(30, 136, 229, 0.12)")
-    fig_chip.add_annotation(x=5, y=6.8, text="<b>tt_um_neurochip_snn</b>", showarrow=False, font=dict(size=16))
-    fig_chip.add_annotation(x=5, y=5.4, text="aer_top → snn_layer<br>4× LIF Neuron + 8× STDP Synapse<br>+ Telemetria spike_cnt[3:0]", showarrow=False, font=dict(size=12))
-    fig_chip.add_annotation(x=5, y=2.5, text="1689 células ASIC | 172 FFs | 50 MHz", showarrow=False, font=dict(size=11))
+    view_mode = st.radio(
+        "Modo de Visualização do Hardware",
+        ["Hardware Real (ASIC + PCB Tiny Tapeout)", "Diagrama de Pinos & Floorplan Lógico"],
+        horizontal=True,
+    )
 
-    left_pins = [
-        (8.0, "clk (50 MHz)"),
-        (7.0, "rst_n (ativo baixo)"),
-        (6.0, "ena (chip select)"),
-        (4.8, "ui_in[0]: en"),
-        (3.8, "ui_in[1]: aer_in_valid"),
-        (2.8, "ui_in[2]: aer_in_addr"),
-    ]
-    right_pins = [
-        (8.0, "uo_out[0]: aer_out_valid"),
-        (6.8, "uo_out[2:1]: aer_out_addr"),
-        (5.4, "uo_out[6:3]: spike_cnt[3:0]"),
-        (4.0, "uo_out[7]: core_en"),
-        (2.4, "uio[7:0]: Hi-Z (oe=0)"),
-    ]
-    for y, lbl in left_pins:
-        fig_chip.add_shape(type="line", x0=1.2, y0=y, x1=2.0, y1=y, line=dict(width=2))
-        fig_chip.add_annotation(x=1.1, y=y, text=lbl, xanchor="right", showarrow=False, font=dict(size=11))
-    for y, lbl in right_pins:
-        fig_chip.add_shape(type="line", x0=8.0, y0=y, x1=8.8, y1=y, line=dict(width=2))
-        fig_chip.add_annotation(x=8.9, y=y, text=lbl, xanchor="left", showarrow=False, font=dict(size=11))
+    render_path = ROOT / "docs" / "hardware_render.png"
+    if view_mode == "Hardware Real (ASIC + PCB Tiny Tapeout)":
+        if render_path.exists():
+            st.image(
+                str(render_path),
+                caption="Protótipo final — ASIC tt_um_neurochip_snn (QFN-64, Sky130 130 nm) montado em placa Tiny Tapeout",
+                use_container_width=True,
+            )
+        else:
+            st.warning("Arquivo `docs/hardware_render.png` não encontrado.")
+    else:
+        fig_chip = go.Figure()
+        fig_chip.add_shape(
+            type="rect", x0=2.2, y0=0.8, x1=7.8, y1=9.2,
+            line=dict(color="#58A6FF", width=2.5),
+            fillcolor="#161B22",
+        )
+        fig_chip.add_shape(
+            type="circle", x0=2.45, y0=8.55, x1=2.75, y1=8.85,
+            fillcolor="#00D4FF", line=dict(color="#00D4FF"),
+        )
+        fig_chip.add_annotation(x=5.0, y=8.7, text="<b>tt_um_neurochip_snn (Sky130 1×1 Tile)</b>", showarrow=False, font=dict(size=14, color="#E6EDF3"))
 
-    fig_chip.update_xaxes(range=[0, 10], visible=False)
-    fig_chip.update_yaxes(range=[0, 10], visible=False)
-    fig_chip.update_layout(height=420, margin=dict(l=10, r=10, t=20, b=10))
-    st.plotly_chart(fig_chip, use_container_width=True)
+        blocks = [
+            (2.6, 6.2, 4.9, 8.0, "rgba(0, 212, 255, 0.14)", "#00D4FF", "<b>aer_top</b><br>Roteador AER + Fila"),
+            (5.1, 6.2, 7.4, 8.0, "rgba(46, 204, 113, 0.14)", "#2ECC71", "<b>Telemetria</b><br>spike_cnt[3:0] + core_en"),
+            (2.6, 3.3, 7.4, 5.8, "rgba(123, 97, 255, 0.14)", "#7B61FF", "<b>snn_layer</b><br>4× lif_neuron (8-bit, V_TH=100) + 8× stdp_synapse (LTP/LTD)"),
+            (2.6, 1.3, 7.4, 2.9, "rgba(255, 159, 28, 0.10)", "#FF9F1C", "<b>Síntese:</b> 1689 células | 172 FFs | 572 LUTs (iCE40) | 408 LUTs (ECP5)"),
+        ]
+        for x0, y0, x1, y1, fill, border, text in blocks:
+            fig_chip.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, line=dict(color=border, width=1.5), fillcolor=fill)
+            fig_chip.add_annotation(x=(x0 + x1) / 2, y=(y0 + y1) / 2, text=text, showarrow=False, font=dict(size=11, color="#E6EDF3"))
+
+        left_pins = [
+            (8.0, "clk (50 MHz)", "#FF4B4B"),
+            (7.0, "rst_n (ativo baixo)", "#FF4B4B"),
+            (6.0, "ena (chip select)", "#FF9F1C"),
+            (4.8, "ui_in[0]: en", "#00D4FF"),
+            (3.8, "ui_in[1]: aer_in_valid", "#00D4FF"),
+            (2.8, "ui_in[2]: aer_in_addr", "#00D4FF"),
+        ]
+        right_pins = [
+            (8.0, "uo_out[0]: aer_out_valid", "#2ECC71"),
+            (6.8, "uo_out[2:1]: aer_out_addr", "#2ECC71"),
+            (5.4, "uo_out[6:3]: spike_cnt[3:0]", "#2ECC71"),
+            (4.0, "uo_out[7]: core_en", "#2ECC71"),
+            (2.4, "uio[7:0]: Hi-Z (oe=0)", "#8B949E"),
+        ]
+        for y, lbl, col in left_pins:
+            fig_chip.add_shape(type="line", x0=1.5, y0=y, x1=2.2, y1=y, line=dict(color=col, width=3))
+            fig_chip.add_annotation(x=1.4, y=y, text=lbl, xanchor="right", showarrow=False, font=dict(size=11, color=col))
+        for y, lbl, col in right_pins:
+            fig_chip.add_shape(type="line", x0=7.8, y0=y, x1=8.5, y1=y, line=dict(color=col, width=3))
+            fig_chip.add_annotation(x=8.6, y=y, text=lbl, xanchor="left", showarrow=False, font=dict(size=11, color=col))
+
+        fig_chip.update_xaxes(range=[0, 10], visible=False)
+        fig_chip.update_yaxes(range=[0.2, 9.6], visible=False)
+        apply_dark_layout(fig_chip, height=460)
+        st.plotly_chart(fig_chip, use_container_width=True)
 
     st.subheader("Estimativa de Ocupação em Placas FPGA Reais")
     ice_luts = r_ice40["SB_LUT4"] if r_ice40 else 572
