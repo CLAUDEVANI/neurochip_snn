@@ -1,29 +1,39 @@
-# NeuroChip SNN — Núcleo Neuromórfico em Verilog (LIF + STDP + AER)
+# NeuroChip SNN
 
-Projeto de hardware digital sintetizável de um núcleo neuromórfico (*Spiking Neural Network*) em aritmética inteira de 8 bits, com aprendizado local em silício (**STDP**), interface orientada a eventos (**AER** com fila sem perda) e encapsulamento compatível com fabricação ASIC **Tiny Tapeout**.
+Núcleo neuromórfico baseado em **Spiking Neural Networks (SNN)** implementado em Verilog RTL sintetizável, com neurônios **LIF** (*Leaky Integrate-and-Fire*), plasticidade sináptica **STDP** (*Spike-Timing-Dependent Plasticity*), roteamento **AER** (*Address-Event Representation*) e wrapper compatível com **Tiny Tapeout**.
 
-## Arquitetura
+## Arquitetura RTL (`rtl/`)
 
-- **Neurônio LIF (`rtl/lif_neuron.v`):** Modelo *Leaky Integrate-and-Fire* em ponto fixo (8 bits) com decaimento exponencial implementado via *bit-shift* (`V_mem >> 3`), eliminando multiplicadores.
-- **Sinapse STDP (`rtl/stdp_synapse.v`):** Aprendizado local *Spike-Timing-Dependent Plasticity* em hardware com janelas temporais (`pre_trace`, `post_trace`), potenciação (LTP) e depressão (LTD) saturadas.
-- **Camada SNN (`rtl/snn_layer.v`):** 4 neurônios LIF em paralelo com 8 sinapses STDP e soma saturada.
-- **Rede Multicamada (`rtl/snn_multilayer.v`):** Cascata de 2 camadas SNN (8 neurônios, 16 sinapses STDP).
-- **Interface AER (`rtl/aer_top.v`):** Decodificador de entrada e árbitro de saída com fila de eventos pendentes (`pending_spikes`) para evitar perda de disparos simultâneos.
-- **Wrapper ASIC (`rtl/tt_um_neurochip_snn.v`):** Mapeamento de pinos no padrão oficial do Tiny Tapeout (`ui_in`, `uo_out`, `uio_*`, `ena`, `clk`, `rst_n`).
+| Módulo | Descrição |
+| :--- | :--- |
+| `lif_neuron.v` | Neurônio LIF de 8 bits com vazamento por deslocamento (`LEAK_SHIFT`), limiar configurável (`V_TH`) e reset assíncrono. |
+| `stdp_synapse.v` | Sinapse com aprendizado local STDP (LTP/LTD), traços pré/pós-sinápticos e saturação segura em `MAX_W`. |
+| `snn_layer.v` | Camada totalmente conectada (2 entradas x 4 neurônios LIF + 8 sinapses STDP). |
+| `snn_multilayer.v` | Rede multicamada em cascata (`L1` oculta -> `L2` saída). |
+| `aer_top.v` | Codificador/decodificador AER com fila de eventos pendentes. |
+| `tt_um_neurochip_snn.v` | Top-level compatível com o barramento padrão do Tiny Tapeout com telemetria de spikes. |
 
-## Resultados de Síntese (Yosys 0.52)
+## Mapa de Pinos (`tt_um_neurochip_snn`)
 
-| Top Module | Células Lógicas | Flip-Flops | Status |
-| :--- | :---: | :---: | :---: |
-| `aer_top` | 1.677 | 168 bits | 0 erros / 0 latches |
-| `tt_um_neurochip_snn` | 1.678 | 168 bits | Pronto para Tiny Tapeout |
+| Pino | Direção | Função |
+| :--- | :--- | :--- |
+| `ui_in[0]` | Entrada | `en` — Habilitação do núcleo (combinada com `ena`) |
+| `ui_in[1]` | Entrada | `aer_in_valid` — Pulso de evento AER de entrada |
+| `ui_in[2]` | Entrada | `aer_in_addr` — Endereço do canal de entrada (`0` ou `1`) |
+| `uo_out[0]` | Saída | `aer_out_valid` — Indica disparo AER de saída |
+| `uo_out[2:1]` | Saída | `aer_out_addr[1:0]` — Endereço do neurônio que disparou |
+| `uo_out[6:3]` | Saída | `spike_cnt[3:0]` — Contador de telemetria de spikes |
+| `uo_out[7]` | Saída | `core_en` — Status de operação do núcleo |
 
-## Estrutura do Projeto
+## Execução Unificada (`./neurochip_snn.sh`)
 
-```text
-neurochip_snn/
-├── rtl/          # Verilog sintetizável (LIF, STDP, Camada, Multicamada, AER, Tiny Tapeout)
-├── tb/           # Testbenches em Verilog e verificação Cocotb
-├── sim/          # Modelo dourado Python, codificador de sinal 60 Hz e dashboard Streamlit
-├── build/        # Binários compilados, ondas (.vcd) e esquemáticos (.svg)
-└── Makefile      # Automação de simulação, síntese e visualização
+    ./neurochip_snn.sh help        # Lista todos os comandos
+    ./neurochip_snn.sh sim-all     # Roda pytest + simulações RTL + corner cases
+    ./neurochip_snn.sh synth-all   # Roda síntese ASIC no Yosys e salva build/*.rpt
+    ./neurochip_snn.sh ci          # Pipeline completo (sim-all + synth-all)
+    ./neurochip_snn.sh dashboard   # Abre o monitor interativo no Streamlit
+    ./neurochip_snn.sh clean       # Limpa artefatos temporários em build/
+
+## Integração Contínua (CI)
+
+O workflow `.github/workflows/ci.yml` executa `./neurochip_snn.sh sim-all` e `./neurochip_snn.sh synth-all` em cada push/PR na branch `main`, publicando os relatórios de síntese do Yosys como artefatos do GitHub Actions.

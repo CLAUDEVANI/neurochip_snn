@@ -11,28 +11,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do repositório
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Instalar ferramentas EDA (Icarus Verilog + Yosys)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install EDA tools (Icarus Verilog & Yosys)
         run: |
           sudo apt-get update
-          sudo apt-get install -y iverilog yosys make
+          sudo apt-get install -y iverilog yosys
 
-      - name: Validar modelo Python (bit-exato)
-        run: make py
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Simular chip completo (AER + STDP)
-        run: make sim_top
+      - name: Run full simulation & verification suite
+        run: |
+          chmod +x neurochip_snn.sh
+          ./neurochip_snn.sh sim-all
 
-      - name: Simular sinal elétrico real (60 Hz + transiente)
-        run: make real_sim
+      - name: Run ASIC synthesis (Yosys)
+        run: |
+          ./neurochip_snn.sh synth-all
 
-      - name: Simular rede multicamada (2 camadas SNN)
-        run: make sim_multi
-
-      - name: Sintetizar para Tiny Tapeout (ASIC)
-        run: make synth_tt
-
-      - name: Sintetizar rede multicamada
-        run: make synth_multi
+      - name: Upload synthesis reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yosys-synthesis-reports
+          path: build/*.rpt
+          if-no-files-found: warn

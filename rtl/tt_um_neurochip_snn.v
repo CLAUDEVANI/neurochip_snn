@@ -12,29 +12,42 @@ module tt_um_neurochip_snn (
     input  wire       rst_n     // Reset ativo em nível baixo
 );
 
+    wire       core_en;
     wire       aer_out_valid;
     wire [1:0] aer_out_addr;
+    reg  [3:0] spike_cnt;
+
+    assign core_en = ena & ui_in[0];
 
     // Mapeamento dos pinos do Tiny Tapeout:
-    // ui_in[0] = en (enable do núcleo)
-    // ui_in[1] = aer_in_valid
-    // ui_in[2] = aer_in_addr
+    // ui_in[0]    = en (enable do núcleo)
+    // ui_in[1]    = aer_in_valid
+    // ui_in[2]    = aer_in_addr
+    // uo_out[0]   = aer_out_valid
+    // uo_out[2:1] = aer_out_addr[1:0]
+    // uo_out[6:3] = spike_cnt[3:0] (telemetria de disparos AER)
+    // uo_out[7]   = core_en (status de operação do núcleo)
     aer_top u_core (
         .clk(clk),
         .rst_n(rst_n),
-        .en(ena & ui_in[0]),
+        .en(core_en),
         .aer_in_valid(ui_in[1]),
         .aer_in_addr(ui_in[2]),
         .aer_out_valid(aer_out_valid),
         .aer_out_addr(aer_out_addr)
     );
 
-    // Saídas dedicadas:
-    // uo_out[0]   = aer_out_valid
-    // uo_out[2:1] = aer_out_addr[1:0]
-    assign uo_out  = {5'b00000, aer_out_addr, aer_out_valid};
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            spike_cnt <= 4'd0;
+        end else if (core_en && aer_out_valid) begin
+            spike_cnt <= spike_cnt + 4'd1;
+        end
+    end
 
-    // Pinos bidirecionais não utilizados (mantidos em alta impedância / zero)
+    assign uo_out  = {core_en, spike_cnt, aer_out_addr, aer_out_valid};
+
+    // Pinos bidirecionais mantidos em entrada / alta impedância
     assign uio_out = 8'b00000000;
     assign uio_oe  = 8'b00000000;
 
