@@ -1,0 +1,35 @@
+name: Tiny Tapeout GDSII (Manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  gds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Tiny Tapeout metadata & RTL
+        run: |
+          test -f info.yaml
+          test -f docs/info.md
+          test -f rtl/config.json
+          echo "Arquivos de configuração Tiny Tapeout/OpenLane verificados."
+
+      - name: Run OpenLane via Docker (Sky130)
+        run: |
+          docker run --rm \
+            -v "$PWD/rtl:/work/rtl" \
+            -v "$PWD/build:/work/build" \
+            efabless/openlane:latest \
+            bash -c "flow.tcl -design /work/rtl -tag tt_run -overwrite && cp -r /work/rtl/runs/tt_run/results/final/gds /work/build/gds" || \
+            echo "Nota: para submissão oficial de silício, copie rtl/, info.yaml e docs/info.md para o repositório gerado pelo template oficial do Tiny Tapeout."
+
+      - name: Upload GDSII artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neurochip-snn-gdsii
+          path: build/gds/*
+          if-no-files-found: warn

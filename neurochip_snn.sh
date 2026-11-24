@@ -36,7 +36,10 @@ Comandos disponíveis:
   sim-all     Executa todas as validações Python e simulações RTL
   synth-tt    Sintetiza tt_um_neurochip_snn no Yosys e salva relatório
   synth-multi Sintetiza snn_multilayer no Yosys e salva relatório
-  synth-all   Executa todas as sínteses no Yosys
+  synth-ice40 Sintetiza tt_um_neurochip_snn para FPGA Lattice iCE40
+  synth-ecp5  Sintetiza tt_um_neurochip_snn para FPGA Lattice ECP5
+  synth-fpga  Executa sínteses FPGA (iCE40 + ECP5)
+  synth-all   Executa todas as sínteses (ASIC + FPGA) no Yosys
   ci          Executa o pipeline completo (sim-all + synth-all)
   dashboard   Abre o painel Streamlit (usa .venv se existir)
   clean       Limpa artefatos temporários em build/
@@ -99,9 +102,22 @@ case "$cmd" in
         mkdir -p build
         yosys -p "read_verilog rtl/lif_neuron.v rtl/stdp_synapse.v rtl/snn_layer.v rtl/snn_multilayer.v; synth -top snn_multilayer; stat" | tee build/synth_multi.rpt
         ;;
+    synth-ice40)
+        mkdir -p build
+        yosys -p "read_verilog rtl/lif_neuron.v rtl/stdp_synapse.v rtl/snn_layer.v rtl/aer_top.v rtl/tt_um_neurochip_snn.v; synth_ice40 -top tt_um_neurochip_snn -json build/neurochip_ice40.json; stat" | tee build/synth_ice40.rpt
+        ;;
+    synth-ecp5)
+        mkdir -p build
+        yosys -p "read_verilog rtl/lif_neuron.v rtl/stdp_synapse.v rtl/snn_layer.v rtl/aer_top.v rtl/tt_um_neurochip_snn.v; synth_ecp5 -top tt_um_neurochip_snn -json build/neurochip_ecp5.json; stat" | tee build/synth_ecp5.rpt
+        ;;
+    synth-fpga)
+        "$0" synth-ice40
+        "$0" synth-ecp5
+        ;;
     synth-all)
         "$0" synth-tt
         "$0" synth-multi
+        "$0" synth-fpga
         ;;
     ci)
         "$0" sim-all
