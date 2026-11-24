@@ -9,3 +9,4 @@ build/
 *.dot
 *.svg
 *.out.agents/
+.agents/
