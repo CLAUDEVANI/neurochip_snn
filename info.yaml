@@ -1,0 +1,48 @@
+yaml_version: 6
+
+project:
+  title:        "NeuroChip SNN (LIF + STDP + AER)"
+  author:       "Claudevani Pereira"
+  discord:      ""
+  description:  "Núcleo neuromórfico SNN com neurônios LIF, sinapses STDP, roteamento AER e telemetria de spikes."
+  language:     "Verilog"
+  clock_hz:     50000000
+  tiles:        "1x1"
+  top_module:   "tt_um_neurochip_snn"
+  source_files:
+    - "rtl/lif_neuron.v"
+    - "rtl/stdp_synapse.v"
+    - "rtl/snn_layer.v"
+    - "rtl/aer_top.v"
+    - "rtl/tt_um_neurochip_snn.v"
+
+pinout:
+  # Inputs
+  ui[0]: "en (enable do núcleo)"
+  ui[1]: "aer_in_valid"
+  ui[2]: "aer_in_addr"
+  ui[3]: ""
+  ui[4]: ""
+  ui[5]: ""
+  ui[6]: ""
+  ui[7]: ""
+
+  # Outputs
+  uo[0]: "aer_out_valid"
+  uo[1]: "aer_out_addr[0]"
+  uo[2]: "aer_out_addr[1]"
+  uo[3]: "spike_cnt[0]"
+  uo[4]: "spike_cnt[1]"
+  uo[5]: "spike_cnt[2]"
+  uo[6]: "spike_cnt[3]"
+  uo[7]: "core_en"
+
+  # Bidirectional pins
+  uio[0]: ""
+  uio[1]: ""
+  uio[2]: ""
+  uio[3]: ""
+  uio[4]: ""
+  uio[5]: ""
+  uio[6]: ""
+  uio[7]: ""

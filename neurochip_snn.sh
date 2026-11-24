@@ -32,6 +32,7 @@ Comandos disponíveis:
   sim-real    Codifica sinal real e roda simulação Verilog
   sim-multi   Simula a rede neural multicamada (2 camadas)
   sim-corner  Executa testbench auto-verificável de corner cases
+  sim-tt      Valida o wrapper Tiny Tapeout (pinout + telemetria)
   sim-all     Executa todas as validações Python e simulações RTL
   synth-tt    Sintetiza tt_um_neurochip_snn no Yosys e salva relatório
   synth-multi Sintetiza snn_multilayer no Yosys e salva relatório
@@ -77,12 +78,18 @@ case "$cmd" in
         iverilog -o build/sim_corner rtl/lif_neuron.v rtl/stdp_synapse.v rtl/snn_layer.v rtl/snn_multilayer.v tb/tb_corner_cases.v
         vvp build/sim_corner
         ;;
+    sim-tt)
+        mkdir -p build
+        iverilog -o build/sim_tt rtl/lif_neuron.v rtl/stdp_synapse.v rtl/snn_layer.v rtl/aer_top.v rtl/tt_um_neurochip_snn.v tb/tb_tt_um_neurochip_snn.v
+        vvp build/sim_tt
+        ;;
     sim-all)
         "$0" pytest
         "$0" sim-top
         "$0" sim-real
         "$0" sim-multi
         "$0" sim-corner
+        "$0" sim-tt
         ;;
     synth-tt)
         mkdir -p build
