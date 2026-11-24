@@ -40,6 +40,9 @@ Comandos disponíveis:
   synth-ecp5  Sintetiza tt_um_neurochip_snn para FPGA Lattice ECP5
   synth-fpga  Executa sínteses FPGA (iCE40 + ECP5)
   synth-all   Executa todas as sínteses (ASIC + FPGA) no Yosys
+  pnr-ice40   Place & Route (iCE40-HX1K) + bitstream .bin
+  pnr-ecp5    Place & Route (ECP5-25F) + bitstream .bit
+  pnr-all     Executa Place & Route + bitstreams (iCE40 + ECP5)
   ci          Executa o pipeline completo (sim-all + synth-all)
   dashboard   Abre o painel Streamlit (usa .venv se existir)
   clean       Limpa artefatos temporários em build/
@@ -132,6 +135,26 @@ case "$cmd" in
         ;;
     help|-h|--help)
         show_help
+        ;;
+    pnr-ice40)
+        "$0" synth-ice40
+        PCF_ARG=""
+        [ -f "fpga/constraints_ice40.pcf" ] && PCF_ARG="--pcf fpga/constraints_ice40.pcf"
+        nextpnr-ice40 --hx1k --package tq144 --json build/neurochip_ice40.json $PCF_ARG --asc build/neurochip_ice40.asc | tee build/pnr_ice40.rpt
+        icepack build/neurochip_ice40.asc build/neurochip_ice40.bin
+        echo "Bitstream gerado em build/neurochip_ice40.bin"
+        ;;
+    pnr-ecp5)
+        "$0" synth-ecp5
+        LPF_ARG=""
+        [ -f "fpga/constraints_ecp5.lpf" ] && LPF_ARG="--lpf fpga/constraints_ecp5.lpf"
+        nextpnr-ecp5 --25k --package CABGA381 --json build/neurochip_ecp5.json $LPF_ARG --textcfg build/neurochip_ecp5.config | tee build/pnr_ecp5.rpt
+        ecppack --compress build/neurochip_ecp5.config build/neurochip_ecp5.bit
+        echo "Bitstream gerado em build/neurochip_ecp5.bit"
+        ;;
+    pnr-all)
+        "$0" pnr-ice40
+        "$0" pnr-ecp5
         ;;
     *)
         echo "Comando desconhecido: $cmd"
