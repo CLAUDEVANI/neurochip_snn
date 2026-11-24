@@ -93,11 +93,12 @@ def parse_yosys_report(path: Path):
     }
 
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Sinal Elétrico & Spikes AER",
     "Rede Multicamada (L1 vs L2)",
     "Síntese ASIC & FPGA (Yosys)",
     "Hardware & Produção Externa",
+    "Prototipagem (FPGA & Tiny Tapeout)",
 ])
 
 with tab1:
@@ -376,3 +377,96 @@ with tab4:
                 )
             else:
                 st.caption(f"`{fname}` ainda não gerado (rode `./neurochip_snn.sh synth-fpga`).")
+
+# --- ABA 5: Prototipagem (FPGA & Tiny Tapeout) ---
+with tab5:
+    st.subheader("Pacote Completo para Prototipagem Física")
+
+    def extract_fmax(rpt_path: Path, fallback: str) -> str:
+        if not rpt_path.exists():
+            return fallback
+        content = rpt_path.read_text(errors="ignore")
+        matches = re.findall(r"Max frequency for clock[^:]*:\s*([0-9.]+\s*MHz)", content)
+        return matches[-1] if matches else fallback
+
+    fmax_ice = extract_fmax(ROOT / "build" / "pnr_ice40.rpt", "95.05 MHz")
+    fmax_ecp = extract_fmax(ROOT / "build" / "pnr_ecp5.rpt", "102.52 MHz")
+
+    p1_m, p2_m, p3_m, p4_m = st.columns(4)
+    p1_m.metric("Fmax iCE40-HX1K (PnR)", fmax_ice)
+    p2_m.metric("Fmax ECP5-25F (PnR)", fmax_ecp)
+    p3_m.metric("Alvo Tiny Tapeout", "50 MHz (1×1)")
+    p4_m.metric("Células ASIC", r_tt["cells"] if r_tt else 1689)
+
+    st.markdown("### 1. Checklist de Artefatos Prontos para Bancada")
+    artifacts_check = [
+        ("build/neurochip_ice40.bin", "Bitstream Lattice iCE40-HX1K (32 KB)"),
+        ("build/neurochip_ecp5.bit", "Bitstream Lattice ECP5-25F (108 KB)"),
+        ("build/pnr_ice40.rpt", "Relatório Place & Route iCE40"),
+        ("build/pnr_ecp5.rpt", "Relatório Place & Route ECP5"),
+        ("info.yaml", "Metadados oficiais Tiny Tapeout"),
+        ("docs/info.md", "Documentação do projeto Tiny Tapeout"),
+        ("rtl/config.json", "Restrições físicas OpenLane / Sky130"),
+    ]
+    chk_rows = []
+    for rel_path, desc in artifacts_check:
+        fp = ROOT / rel_path
+        exists = fp.exists()
+        size_kb = f"{fp.stat().st_size / 1024:.1f} KB" if exists else "—"
+        chk_rows.append({
+            "Arquivo": rel_path,
+            "Descrição": desc,
+            "Status": "Pronto" if exists else "Pendente",
+            "Tamanho": size_kb,
+        })
+    st.dataframe(pd.DataFrame(chk_rows), use_container_width=True, hide_index=True)
+
+    st.markdown("### 2. Comandos de Gravação em Placa FPGA & Fluxo Tiny Tapeout")
+    c_fpga, c_tt = st.columns(2)
+
+    with c_fpga:
+        st.markdown("**Gravação em FPGA (`openFPGALoader`)**")
+        st.code(
+            "# Gerar/atualizar bitstreams via neurochip_snn.sh\n"
+            "./neurochip_snn.sh pnr-all\n\n"
+            "# Gravar na SRAM da placa iCE40\n"
+            "openFPGALoader -c usb-blaster build/neurochip_ice40.bin\n\n"
+            "# Gravar na SRAM da placa ECP5\n"
+            "openFPGALoader -b ulx3s build/neurochip_ecp5.bit",
+            language="bash",
+        )
+
+    with c_tt:
+        st.markdown("**Submissão Tiny Tapeout (ASIC Sky130)**")
+        st.code(
+            "# 1. Validar suíte completa (pytest + RTL + TT + sínteses)\n"
+            "./neurochip_snn.sh ci\n\n"
+            "# 2. Disparar geração GDSII manual no GitHub Actions\n"
+            'gh workflow run "Tiny Tapeout GDSII (Manual)"\n\n'
+            "# 3. Copiar rtl/, info.yaml e docs/info.md para o repo TT oficial",
+            language="bash",
+        )
+
+    st.markdown("### 3. Download Direto dos Arquivos de Prototipagem")
+    dl_cols = st.columns(3)
+    download_candidates = [
+        "build/neurochip_ice40.bin",
+        "build/neurochip_ecp5.bit",
+        "info.yaml",
+        "docs/info.md",
+        "rtl/config.json",
+        "build/pnr_ice40.rpt",
+    ]
+    for idx, fname in enumerate(download_candidates):
+        fp = ROOT / fname
+        col = dl_cols[idx % 3]
+        if fp.exists():
+            col.download_button(
+                label=f"Baixar {fname}",
+                data=fp.read_bytes(),
+                file_name=fp.name,
+                key=f"proto_dl_{fname}",
+                use_container_width=True,
+            )
+        else:
+            col.caption(f"`{fname}` ainda não gerado.")
