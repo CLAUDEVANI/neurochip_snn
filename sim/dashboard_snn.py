@@ -398,7 +398,80 @@ with tab5:
     p3_m.metric("Alvo Tiny Tapeout", "50 MHz (1×1)")
     p4_m.metric("Células ASIC", r_tt["cells"] if r_tt else 1689)
 
-    st.markdown("### 1. Checklist de Artefatos Prontos para Bancada")
+    st.markdown("### 1. Esquema de Montagem & Interligação de Bancada")
+
+    fig_asm = go.Figure()
+
+    # Bloco central: DUT (tt_um_neurochip_snn / FPGA)
+    fig_asm.add_shape(
+        type="rect", x0=3.5, y0=1.5, x1=6.5, y1=8.5,
+        line=dict(color="#00D4FF", width=2.5),
+        fillcolor="#161B22",
+    )
+    fig_asm.add_annotation(
+        x=5.0, y=7.6,
+        text="<b>DUT: tt_um_neurochip_snn</b><br><span style='font-size:11px;color:#8B949E'>Sky130 1×1 / iCE40 / ECP5</span>",
+        showarrow=False, font=dict(size=13, color="#E6EDF3"),
+    )
+    fig_asm.add_shape(type="rect", x0=3.8, y0=4.8, x1=6.2, y1=6.5, line=dict(color="#7B61FF", width=1.5), fillcolor="rgba(123,97,255,0.14)")
+    fig_asm.add_annotation(x=5.0, y=5.65, text="<b>aer_top + snn_layer</b><br>4× LIF + 8× STDP", showarrow=False, font=dict(size=11, color="#E6EDF3"))
+
+    fig_asm.add_shape(type="rect", x0=3.8, y0=2.3, x1=6.2, y1=4.2, line=dict(color="#2ECC71", width=1.5), fillcolor="rgba(46,204,113,0.14)")
+    fig_asm.add_annotation(x=5.0, y=3.25, text="<b>Telemetria & I/O</b><br>spike_cnt[3:0] | core_en", showarrow=False, font=dict(size=11, color="#E6EDF3"))
+
+    # Periféricos à esquerda (Clock, Reset, Entradas ui_in[2:0])
+    left_blocks = [
+        (7.5, "Oscilador 50 MHz<br>(ou pino clk FPGA)", "#FF4B4B", "clk"),
+        (5.8, "Botão RST_N + Pull-up 10kΩ<br>(ativo em nível baixo)", "#FF4B4B", "rst_n"),
+        (3.8, "Chaves DIP ui_in[2:0]<br>[0]=en | [1]=valid | [2]=addr", "#00D4FF", "ui_in[2:0]"),
+        (2.0, "Desacoplamento 100nF + 10µF<br>entre VCC e GND", "#FF9F1C", "VCC/GND"),
+    ]
+    for y, lbl, col, port_lbl in left_blocks:
+        fig_asm.add_shape(type="rect", x0=0.4, y0=y - 0.6, x1=2.6, y1=y + 0.6, line=dict(color=col, width=1.6), fillcolor="#161B22")
+        fig_asm.add_annotation(x=1.5, y=y, text=lbl, showarrow=False, font=dict(size=10.5, color=col))
+        fig_asm.add_shape(type="line", x0=2.6, y0=y, x1=3.5, y1=y, line=dict(color=col, width=2.5))
+        fig_asm.add_annotation(x=3.05, y=y + 0.25, text=port_lbl, showarrow=False, font=dict(size=9.5, color="#E6EDF3"))
+
+    # Periféricos à direita (Saídas uo_out[7:0] e uio[7:0])
+    right_blocks = [
+        (7.2, "LED / Osciloscópio uo_out[0]<br>aer_out_valid (disparo)", "#2ECC71", "uo_out[0]"),
+        (5.4, "LEDs / Display uo_out[2:1]<br>aer_out_addr[1:0] (0..3)", "#2ECC71", "uo_out[2:1]"),
+        (3.6, "Barra 4-LEDs / Hex uo_out[6:3]<br>spike_cnt[3:0] + uo_out[7] en", "#00D4FF", "uo_out[7:3]"),
+        (1.9, "Headers uio[7:0] (Hi-Z)<br>Reservado / Expansão", "#8B949E", "uio[7:0]"),
+    ]
+    for y, lbl, col, port_lbl in right_blocks:
+        fig_asm.add_shape(type="line", x0=6.5, y0=y, x1=7.4, y1=y, line=dict(color=col, width=2.5))
+        fig_asm.add_annotation(x=6.95, y=y + 0.25, text=port_lbl, showarrow=False, font=dict(size=9.5, color="#E6EDF3"))
+        fig_asm.add_shape(type="rect", x0=7.4, y0=y - 0.6, x1=9.6, y1=y + 0.6, line=dict(color=col, width=1.6), fillcolor="#161B22")
+        fig_asm.add_annotation(x=8.5, y=y, text=lbl, showarrow=False, font=dict(size=10.5, color=col))
+
+    fig_asm.update_xaxes(range=[0, 10], visible=False)
+    fig_asm.update_yaxes(range=[0.8, 9.2], visible=False)
+    apply_dark_layout(fig_asm, height=450, title="Diagrama Esquemático de Montagem em Bancada")
+    st.plotly_chart(fig_asm, use_container_width=True)
+
+    st.markdown("### 2. Lista de Componentes (BOM de Bancada)")
+    bom_df = pd.DataFrame([
+        {"Qtd": "1", "Item": "Módulo / Chip Alvo", "Especificação": "ASIC Sky130 (1×1) ou FPGA iCE40-HX1K / ECP5-25F", "Função": "Executa tt_um_neurochip_snn a até 50 MHz (TT) / ~95–102 MHz (FPGA)"},
+        {"Qtd": "1", "Item": "Fonte / Regulador", "Especificação": "3.3V / 1.8V regulada, baixo ripple (≥ 500 mA)", "Função": "Alimentação do núcleo e trilhos de I/O"},
+        {"Qtd": "4", "Item": "Capacitores Cerâmicos", "Especificação": "100 nF (X7R, 0603/0805) + 1× 10 µF", "Função": "Desacoplamento de alta frequência próximo aos pinos VCC/GND"},
+        {"Qtd": "1", "Item": "Chave DIP (3 vias)", "Especificação": "DIP-3 (ou 3× chaves tácteis + pull-down 10kΩ)", "Função": "Controle de ui_in[0] (en), ui_in[1] (aer_in_valid) e ui_in[2] (aer_in_addr)"},
+        {"Qtd": "1", "Item": "Push-button + Resistor", "Especificação": "Chave NA + resistor pull-up 10kΩ", "Função": "Reset ativo em nível baixo (rst_n)"},
+        {"Qtd": "8", "Item": "LEDs + Resistores", "Especificação": "LEDs SMD/THT + resistores limitadores 330Ω–1kΩ", "Função": "Monitorar uo_out[0] (valid), [2:1] (addr), [6:3] (spike_cnt) e [7] (core_en)"},
+        {"Qtd": "2×12", "Item": "Barras de Pinos (Headers)", "Especificação": "Passo 2,54 mm (macho/fêmea)", "Função": "Conexão com analisador lógico, osciloscópio ou gravador FPGA"},
+    ])
+    st.dataframe(bom_df, use_container_width=True, hide_index=True)
+
+    st.markdown("### 3. Passo a Passo de Montagem e Validação Física")
+    st.markdown(
+        "1. **Alimentação e desacoplamento:** Soldar capacitores de `100 nF` o mais próximo possível dos pinos de alimentação e `10 µF` na entrada da placa antes de energizar.
+"
+        "2. **Reset e habilitação:** Manter `rst_n` em `0` por alguns ciclos de clock e, em seguida, subir para `1`; ajustar `ena = 1` e `ui_in[0] = 1` para acionar `core_en` (`uo_out[7] = 1`).
+"
+        "3. **Estímulo AER e telemetria:** Alternar `ui_in[2]` (`0` ou `1`) e pulsar `ui_in[1] = 1`, verificando os disparos em `uo_out[0]` (`aer_out_valid`), o endereço em `uo_out[2:1]` e a contagem acumulada em `uo_out[6:3]`."
+    )
+
+    st.markdown("### 4. Checklist de Artefatos Prontos para Bancada")
     artifacts_check = [
         ("build/neurochip_ice40.bin", "Bitstream Lattice iCE40-HX1K (32 KB)"),
         ("build/neurochip_ecp5.bit", "Bitstream Lattice ECP5-25F (108 KB)"),
@@ -421,7 +494,7 @@ with tab5:
         })
     st.dataframe(pd.DataFrame(chk_rows), use_container_width=True, hide_index=True)
 
-    st.markdown("### 2. Comandos de Gravação em Placa FPGA & Fluxo Tiny Tapeout")
+    st.markdown("### 5. Comandos de Gravação em Placa FPGA & Fluxo Tiny Tapeout")
     c_fpga, c_tt = st.columns(2)
 
     with c_fpga:
@@ -447,7 +520,7 @@ with tab5:
             language="bash",
         )
 
-    st.markdown("### 3. Download Direto dos Arquivos de Prototipagem")
+    st.markdown("### 6. Download Direto dos Arquivos de Prototipagem")
     dl_cols = st.columns(3)
     download_candidates = [
         "build/neurochip_ice40.bin",
