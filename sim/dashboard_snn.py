@@ -420,6 +420,10 @@ with tab5:
     else:
         st.info("`metrics.csv` ainda não baixado em `build/gds_artifacts/neurochip-snn-gdsii/`.")
 
+    gds_img = ROOT / "docs" / "gds_die_layout.png"
+    if gds_img.exists():
+        st.image(str(gds_img), caption="Layout físico GDSII — tt_um_neurochip_snn (Sky130, tile 1×2, 0 DRC)", use_container_width=True)
+
     st.markdown("### 1. Esquema de Montagem & Interligação de Bancada")
 
     fig_asm = go.Figure()

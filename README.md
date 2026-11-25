@@ -70,3 +70,7 @@ Configurado com tema escuro técnico em `.streamlit/config.toml` e barra lateral
 - **Workflows do GitHub Actions:**
   - `.github/workflows/ci.yml`: valida sintaxe do dashboard, constraints FPGA/TT e executa `./neurochip_snn.sh sim-all` + `./neurochip_snn.sh synth-all` em pushes/PRs na `main` e publica os relatórios do Yosys.
   - `.github/workflows/gds.yml`: workflow manual (`workflow_dispatch`) para geração de GDSII via OpenLane/Docker.
+
+## Layout Físico ASIC (Sky130 — Tile 1×2)
+
+![Layout físico GDSII do NeuroChip SNN no Sky130](docs/gds_die_layout.png)
