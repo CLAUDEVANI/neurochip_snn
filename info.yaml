@@ -7,7 +7,7 @@ project:
   description:  "Núcleo neuromórfico SNN com neurônios LIF, sinapses STDP, roteamento AER e telemetria de spikes."
   language:     "Verilog"
   clock_hz:     50000000
-  tiles:        "1x1"
+  tiles:        "1x2"
   top_module:   "tt_um_neurochip_snn"
   source_files:
     - "rtl/lif_neuron.v"
