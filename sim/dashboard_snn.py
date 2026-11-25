@@ -590,7 +590,9 @@ with tab6:
     svg_path = ROOT / "docs" / "esquema_eletronico_snn.svg"
     if svg_path.exists():
         svg_text = svg_path.read_text(encoding="utf-8")
-        st.markdown(svg_text, unsafe_allow_html=True)
+        import base64
+        b64 = base64.b64encode(svg_text.encode("utf-8")).decode("utf-8")
+        st.markdown(f'<img src="data:image/svg+xml;base64,{b64}" style="width:100%; border-radius:8px;"/>', unsafe_allow_html=True)
         st.download_button(
             "Baixar Esquema Eletrônico (.svg)",
             data=svg_text.encode("utf-8"),
