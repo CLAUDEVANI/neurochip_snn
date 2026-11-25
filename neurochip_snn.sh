@@ -139,7 +139,7 @@ case "$cmd" in
     pnr-ice40)
         "$0" synth-ice40
         PCF_ARG=""
-        [ -f "fpga/constraints_ice40.pcf" ] && PCF_ARG="--pcf fpga/constraints_ice40.pcf"
+        [ -f "fpga/constraints_ice40.pcf" ] && PCF_ARG="--pcf fpga/constraints_ice40.pcf --pcf-allow-unconstrained"
         nextpnr-ice40 --hx1k --package tq144 --json build/neurochip_ice40.json $PCF_ARG --asc build/neurochip_ice40.asc 2>&1 | tee build/pnr_ice40.rpt
         icepack build/neurochip_ice40.asc build/neurochip_ice40.bin
         echo "Bitstream gerado em build/neurochip_ice40.bin"
@@ -147,7 +147,7 @@ case "$cmd" in
     pnr-ecp5)
         "$0" synth-ecp5
         LPF_ARG=""
-        [ -f "fpga/constraints_ecp5.lpf" ] && LPF_ARG="--lpf fpga/constraints_ecp5.lpf"
+        [ -f "fpga/constraints_ecp5.lpf" ] && LPF_ARG="--lpf fpga/constraints_ecp5.lpf --lpf-allow-unconstrained"
         nextpnr-ecp5 --25k --package CABGA381 --json build/neurochip_ecp5.json $LPF_ARG --textcfg build/neurochip_ecp5.config 2>&1 | tee build/pnr_ecp5.rpt
         ecppack --compress build/neurochip_ecp5.config build/neurochip_ecp5.bit
         echo "Bitstream gerado em build/neurochip_ecp5.bit"

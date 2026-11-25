@@ -1,0 +1,19 @@
+# Pinagem de referência — Lattice iCE40-HX1K (TQ144 / iCEstick)
+set_io clk        21
+set_io rst_n      78
+set_io ena        79
+
+# Entradas AER e habilitação
+set_io ui_in[0]   80
+set_io ui_in[1]   81
+set_io ui_in[2]   87
+
+# Saídas AER e telemetria (LEDs + header)
+set_io uo_out[0]  95
+set_io uo_out[1]  96
+set_io uo_out[2]  97
+set_io uo_out[3]  98
+set_io uo_out[4]  99
+set_io uo_out[5]  44
+set_io uo_out[6]  45
+set_io uo_out[7]  47

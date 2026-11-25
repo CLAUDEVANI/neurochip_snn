@@ -50,11 +50,17 @@ Núcleo neuromórfico baseado em **Spiking Neural Networks (SNN)** implementado 
 
 ## Dashboard Interativo (`sim/dashboard_snn.py`)
 
-Configurado com tema escuro técnico em `.streamlit/config.toml` e barra lateral de controle, organizado em 4 abas:
+Configurado com tema escuro técnico em `.streamlit/config.toml` e barra lateral de controle, organizado em **5 abas**:
 1. **Sinal Elétrico & Spikes AER:** Sinal de referência (60 Hz + janela sombreada de surto nos ciclos 80-120), *raster plot* de spikes AER e distribuição por neurônio.
 2. **Rede Multicamada (L1 vs L2):** Propagação de disparos entre camada oculta (`L1`) e saída (`L2`) com gráfico de barras e *heatmap* binário.
 3. **Síntese ASIC & FPGA (Yosys):** Comparativo de células/fios, barras de ocupação em placas FPGA reais (`iCE40-HX1K`, `iCE40-UP5K`, `ECP5-25F`) e relatórios brutos.
 4. **Hardware & Produção Externa:** Alternância entre visualização de hardware em placa Tiny Tapeout (`docs/hardware_render.png`) e diagrama de pinos/*floorplan*, tabela de ocupação em placas FPGAs e download dos arquivos de configuração/netlists.
+5. **Prototipagem (FPGA & Tiny Tapeout):** Métricas de `Fmax` pós-PnR, diagrama esquemático de montagem em bancada, lista de componentes (BOM), passo a passo de validação física, checklist de artefatos e download direto dos bitstreams.
+
+## Pinagem Física FPGA (`fpga/`)
+
+- `fpga/constraints_ice40.pcf`: mapeamento de referência para **Lattice iCE40-HX1K (TQ144 / iCEstick)**.
+- `fpga/constraints_ecp5.lpf`: mapeamento de referência para **Lattice ECP5-25F (CABGA381 / ULX3S)**.
 
 ## Tiny Tapeout & CI/CD
 

@@ -1,0 +1,22 @@
+# Pinagem de referência — Lattice ECP5-25F (CABGA381 / ULX3S)
+LOCATE COMP "clk"       SITE "G2";
+IOBUF  PORT "clk"       IO_TYPE=LVCMOS33;
+FREQUENCY PORT "clk" 25 MHZ;
+
+LOCATE COMP "rst_n"     SITE "R1";
+LOCATE COMP "ena"       SITE "E8";
+
+# Entradas AER e habilitação (Chaves DIP)
+LOCATE COMP "ui_in[0]"  SITE "D8";
+LOCATE COMP "ui_in[1]"  SITE "D7";
+LOCATE COMP "ui_in[2]"  SITE "E7";
+
+# Saídas AER e telemetria (LEDs D0..D7)
+LOCATE COMP "uo_out[0]" SITE "B2";
+LOCATE COMP "uo_out[1]" SITE "C2";
+LOCATE COMP "uo_out[2]" SITE "C1";
+LOCATE COMP "uo_out[3]" SITE "D2";
+LOCATE COMP "uo_out[4]" SITE "D1";
+LOCATE COMP "uo_out[5]" SITE "E2";
+LOCATE COMP "uo_out[6]" SITE "E1";
+LOCATE COMP "uo_out[7]" SITE "H3";
