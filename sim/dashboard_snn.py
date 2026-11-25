@@ -11,6 +11,18 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = str(ROOT / "neurochip_snn.sh")
 
+def apply_dark_layout(fig, height=450, title=""):
+    fig.update_layout(
+        template="plotly_dark",
+        height=height,
+        title=title,
+        paper_bgcolor="#0e1117",
+        plot_bgcolor="#0e1117",
+        margin=dict(l=20, r=20, t=45, b=20),
+    )
+    return fig
+
+
 st.set_page_config(page_title="NeuroChip SNN — Monitor Neuromórfico", layout="wide")
 st.title("NeuroChip SNN — Monitor de Spikes, Síntese ASIC/FPGA e Produção de Hardware")
 
@@ -93,12 +105,13 @@ def parse_yosys_report(path: Path):
     }
 
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Sinal Elétrico & Spikes AER",
     "Rede Multicamada (L1 vs L2)",
     "Síntese ASIC & FPGA (Yosys)",
     "Hardware & Produção Externa",
     "Prototipagem (FPGA & Tiny Tapeout)",
+    "6. Esquema Eletrônico & Hardware"
 ])
 
 with tab1:
@@ -568,3 +581,31 @@ with tab5:
             )
         else:
             col.caption(f"`{fname}` ainda não gerado.")
+
+
+with tab6:
+    st.subheader("Esquema Eletrônico & Arquitetura Física do Hardware")
+    st.caption("Desenho explicativo de interligação em bancada/PCB para prototipagem em FPGA ou ASIC Tiny Tapeout (3.3V).")
+
+    svg_path = ROOT / "docs" / "esquema_eletronico_snn.svg"
+    if svg_path.exists():
+        svg_text = svg_path.read_text(encoding="utf-8")
+        st.markdown(svg_text, unsafe_allow_html=True)
+        st.download_button(
+            "Baixar Esquema Eletrônico (.svg)",
+            data=svg_text.encode("utf-8"),
+            file_name="esquema_eletronico_snn.svg",
+            mime="image/svg+xml",
+        )
+    else:
+        st.warning("Arquivo `docs/esquema_eletronico_snn.svg` não encontrado.")
+
+    st.markdown("### Lista de Materiais (BOM) & Ligações Principais")
+    bom_df = pd.DataFrame([
+        {"Bloco": "Alimentação", "Componente": "Regulador LDO AMS1117-3.3 + 2× 10 µF + 1× 100 nF", "Função": "Estabiliza 5V USB para 3.3V com desacoplamento"},
+        {"Bloco": "Clock & Reset", "Componente": "Oscilador 50 MHz (ou 12 MHz) + Botão + R 10 kΩ", "Função": "Clock principal (`clk`) e reset ativo-baixo (`rst_n`)"},
+        {"Bloco": "Entradas AER", "Componente": "2× Chaves DIP + 1× Push-button + 3× R 10 kΩ", "Função": "Controla `ui_in[0]` (core_en), `ui_in[1]` (valid) e `ui_in[2]` (addr)"},
+        {"Bloco": "Saídas Telemetria", "Componente": "8× LEDs (3mm/5mm) + 8× Resistores 330 Ω", "Função": "Exibe `uo_out[0]` (spike), `[2:1]` (addr), `[6:3]` (contador) e `[7]` (status)"},
+        {"Bloco": "Depuração", "Componente": "Barra de pinos 2×8 (2.54 mm)", "Função": "Acesso rápido para analisador lógico (Saleae / PulseView)"},
+    ])
+    st.dataframe(bom_df, use_container_width=True, hide_index=True)
