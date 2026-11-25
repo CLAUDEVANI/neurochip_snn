@@ -15,6 +15,7 @@ jobs:
           test -f info.yaml
           test -f docs/info.md
           test -f rtl/config.json
+          mkdir -p build/gds
           echo "Arquivos de configuração Tiny Tapeout/OpenLane verificados."
 
       - name: Run OpenLane via Docker (Sky130)
@@ -23,8 +24,14 @@ jobs:
             -v "$PWD/rtl:/work/rtl" \
             -v "$PWD/build:/work/build" \
             efabless/openlane:latest \
-            bash -c "flow.tcl -design /work/rtl -tag tt_run -overwrite && cp -r /work/rtl/runs/tt_run/results/final/gds /work/build/gds" || \
-            echo "Nota: para submissão oficial de silício, copie rtl/, info.yaml e docs/info.md para o repositório gerado pelo template oficial do Tiny Tapeout."
+            bash -lc '
+              set -e
+              volare enable --pdk sky130 bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
+              flow.tcl -design /work/rtl -tag tt_run -overwrite
+              mkdir -p /work/build/gds
+              cp -r /work/rtl/runs/tt_run/results/final/gds/* /work/build/gds/
+              cp /work/rtl/runs/tt_run/reports/metrics.csv /work/build/gds/ 2>/dev/null || true
+            '
 
       - name: Upload GDSII artifacts
         if: always()
