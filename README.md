@@ -11,7 +11,7 @@ Núcleo neuromórfico baseado em **Spiking Neural Networks (SNN)** implementado 
 | `snn_layer.v` | Camada totalmente conectada (2 entradas x 4 neurônios LIF + 8 sinapses STDP). |
 | `snn_multilayer.v` | Rede multicamada em cascata (`L1` oculta -> `L2` saída). |
 | `aer_top.v` | Codificador/decodificador AER com fila de eventos pendentes. |
-| `tt_um_neurochip_snn.v` | Top-level compatível com o Tiny Tapeout (`50 MHz`, tile `1x1`) com contador de telemetria (`spike_cnt[3:0]`) e status `core_en`. |
+| `tt_um_neurochip_snn.v` | Top-level compatível com o Tiny Tapeout (`50 MHz`, tile `1x2`) com contador de telemetria (`spike_cnt[3:0]`) e status `core_en`. |
 
 ## Mapa de Pinos (`tt_um_neurochip_snn`)
 
@@ -32,8 +32,9 @@ Núcleo neuromórfico baseado em **Spiking Neural Networks (SNN)** implementado 
 | :--- | :--- | :--- | :--- | :--- |
 | **ASIC (Yosys)** | `tt_um_neurochip_snn` | 1689 células, 172 FFs | 50 MHz (nominal) | `build/synth_tt.rpt` |
 | **ASIC (Yosys)** | `snn_multilayer` | 3302 células, 328 FFs | — | `build/synth_multi.rpt` |
-| **FPGA iCE40-HX1K** | `tt_um_neurochip_snn` | 572 `SB_LUT4`, 286 `SB_CARRY`, 759/1280 LC (`59%`) | 95.05 MHz (pós-PnR) | `build/neurochip_ice40.json`, `build/neurochip_ice40.bin`, `build/pnr_ice40.rpt` |
-| **FPGA ECP5-25F** | `tt_um_neurochip_snn` | 408 `LUT4`, 164 `CCU2C`, 172 `TRELLIS_FF`, 902 `TRELLIS_COMB` (`3%`) | 102.52 MHz (pós-PnR) | `build/neurochip_ecp5.json`, `build/neurochip_ecp5.bit`, `build/pnr_ecp5.rpt` |
+| **FPGA iCE40-HX1K** | `tt_um_neurochip_snn` | 572 `SB_LUT4`, 286 `SB_CARRY`, 759/1280 LC (`59%`) | 96.26 MHz (pós-PnR, 14 pinos fixos) | `build/neurochip_ice40.json`, `build/neurochip_ice40.bin`, `build/pnr_ice40.rpt` |
+| **FPGA ECP5-25F** | `tt_um_neurochip_snn` | 408 `LUT4`, 164 `CCU2C`, 172 `TRELLIS_FF`, 902 `TRELLIS_COMB` (`3%`) | 103.42 MHz (pós-PnR, 14 pinos fixos) | `build/neurochip_ecp5.json`, `build/neurochip_ecp5.bit`, `build/pnr_ecp5.rpt` |
+| **ASIC Sky130 (OpenLane)** | `tt_um_neurochip_snn` | Tile `1x2` (`0.03635 mm²`), 4058 células, 0 viol. Magic DRC | 50 MHz (`WNS=0.0`, `TNS=0.0`) | `tt_um_neurochip_snn.gds` (3.9 MB), `metrics.csv` |
 
 ## Execução Unificada (`./neurochip_snn.sh`)
 
@@ -55,7 +56,7 @@ Configurado com tema escuro técnico em `.streamlit/config.toml` e barra lateral
 2. **Rede Multicamada (L1 vs L2):** Propagação de disparos entre camada oculta (`L1`) e saída (`L2`) com gráfico de barras e *heatmap* binário.
 3. **Síntese ASIC & FPGA (Yosys):** Comparativo de células/fios, barras de ocupação em placas FPGA reais (`iCE40-HX1K`, `iCE40-UP5K`, `ECP5-25F`) e relatórios brutos.
 4. **Hardware & Produção Externa:** Alternância entre visualização de hardware em placa Tiny Tapeout (`docs/hardware_render.png`) e diagrama de pinos/*floorplan*, tabela de ocupação em placas FPGAs e download dos arquivos de configuração/netlists.
-5. **Prototipagem (FPGA & Tiny Tapeout):** Métricas de `Fmax` pós-PnR, diagrama esquemático de montagem em bancada, lista de componentes (BOM), passo a passo de validação física, checklist de artefatos e download direto dos bitstreams.
+5. **Prototipagem (FPGA & Tiny Tapeout):** Métricas de `Fmax` pós-PnR, diagrama esquemático de montagem em bancada, lista de componentes (BOM), passo a passo de validação física, signoff físico Sky130 (`metrics.csv`), checklist de artefatos e download direto dos bitstreams e do `.gds`.
 
 ## Pinagem Física FPGA (`fpga/`)
 
@@ -65,7 +66,7 @@ Configurado com tema escuro técnico em `.streamlit/config.toml` e barra lateral
 ## Tiny Tapeout & CI/CD
 
 - **Metadados e documentação:** `info.yaml` e `docs/info.md`.
-- **Configuração física (OpenLane / Sky130):** `rtl/config.json` (`161.0 x 111.52 µm`, `50 MHz`).
+- **Configuração física (OpenLane / Sky130):** `rtl/config.json` (`161.0 x 225.76 µm`, `50 MHz`).
 - **Workflows do GitHub Actions:**
-  - `.github/workflows/ci.yml`: executa `./neurochip_snn.sh sim-all` e `./neurochip_snn.sh synth-all` em pushes/PRs na `main` e publica os relatórios do Yosys.
+  - `.github/workflows/ci.yml`: valida sintaxe do dashboard, constraints FPGA/TT e executa `./neurochip_snn.sh sim-all` + `./neurochip_snn.sh synth-all` em pushes/PRs na `main` e publica os relatórios do Yosys.
   - `.github/workflows/gds.yml`: workflow manual (`workflow_dispatch`) para geração de GDSII via OpenLane/Docker.

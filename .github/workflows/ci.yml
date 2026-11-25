@@ -9,39 +9,40 @@ on:
 jobs:
   verify-and-synth:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.11"
 
-      - name: Install EDA tools (Icarus Verilog & Yosys)
+      - name: Install EDA tools & Python deps
         run: |
           sudo apt-get update
           sudo apt-get install -y iverilog yosys
+          python3 -m pip install --upgrade pip
+          pip install pytest numpy pandas plotly streamlit
 
-      - name: Install Python dependencies
+      - name: Validate dashboard syntax & project constraints
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python3 -m py_compile sim/dashboard_snn.py
+          test -f fpga/constraints_ice40.pcf
+          test -f fpga/constraints_ecp5.lpf
+          test -f info.yaml
+          test -f rtl/config.json
 
-      - name: Run full simulation & verification suite
-        run: |
-          chmod +x neurochip_snn.sh
-          ./neurochip_snn.sh sim-all
+      - name: Run full simulation suite (sim-all)
+        run: ./neurochip_snn.sh sim-all
 
-      - name: Run ASIC synthesis (Yosys)
-        run: |
-          ./neurochip_snn.sh synth-all
+      - name: Run ASIC & FPGA synthesis (synth-all)
+        run: ./neurochip_snn.sh synth-all
 
       - name: Upload synthesis reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: yosys-synthesis-reports
+          name: neurochip-snn-reports
           path: build/*.rpt
           if-no-files-found: warn
