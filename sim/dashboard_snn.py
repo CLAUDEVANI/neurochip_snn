@@ -395,8 +395,30 @@ with tab5:
     p1_m, p2_m, p3_m, p4_m = st.columns(4)
     p1_m.metric("Fmax iCE40-HX1K (PnR)", fmax_ice)
     p2_m.metric("Fmax ECP5-25F (PnR)", fmax_ecp)
-    p3_m.metric("Alvo Tiny Tapeout", "50 MHz (1×1)")
+    p3_m.metric("Alvo Tiny Tapeout", "50 MHz (1×2)")
     p4_m.metric("Células ASIC", r_tt["cells"] if r_tt else 1689)
+
+    st.markdown("### 0. Signoff Físico ASIC (Sky130 / OpenLane)")
+    gds_dir = ROOT / "build" / "gds_artifacts" / "neurochip-snn-gdsii"
+    m_csv, gds_f = gds_dir / "metrics.csv", gds_dir / "tt_um_neurochip_snn.gds"
+    if m_csv.exists():
+        mdf = pd.read_csv(m_csv)
+        if not mdf.empty:
+            r = mdf.iloc[0]
+            s1, s2, s3, s4, s5 = st.columns(5)
+            s1.metric("Status OpenLane", str(r.get("flow_status", "—")))
+            s2.metric("Die (1×2)", f"{float(r.get('DIEAREA_mm^2', 0)):.5f} mm²")
+            s3.metric("Total Células", int(r.get("TotalCells", 0)))
+            s4.metric("Magic DRC", f"{int(r.get('Magic_violations', 0))} viol.")
+            s5.metric("WNS / TNS", f"{r.get('wns', 0.0)} / {r.get('tns', 0.0)}")
+            st.dataframe(pd.DataFrame([
+                {"Métrica": "Core Area (µm²)", "Valor": f"{float(r.get('CoreArea_um^2', 0)):.2f}"},
+                {"Métrica": "Células pré-ABC", "Valor": str(int(r.get("cells_pre_abc", 0)))},
+                {"Métrica": "Trilhas (µm)", "Valor": str(int(r.get("wire_length", 0)))},
+                {"Métrica": "GDSII", "Valor": f"{gds_f.stat().st_size/1048576:.2f} MB" if gds_f.exists() else "—"},
+            ]), use_container_width=True, hide_index=True)
+    else:
+        st.info("`metrics.csv` ainda não baixado em `build/gds_artifacts/neurochip-snn-gdsii/`.")
 
     st.markdown("### 1. Esquema de Montagem & Interligação de Bancada")
 
@@ -463,14 +485,11 @@ with tab5:
     st.dataframe(bom_df, use_container_width=True, hide_index=True)
 
     st.markdown("### 3. Passo a Passo de Montagem e Validação Física")
-    st.markdown(
-        "1. **Alimentação e desacoplamento:** Soldar capacitores de `100 nF` o mais próximo possível dos pinos de alimentação e `10 µF` na entrada da placa antes de energizar.
-"
-        "2. **Reset e habilitação:** Manter `rst_n` em `0` por alguns ciclos de clock e, em seguida, subir para `1`; ajustar `ena = 1` e `ui_in[0] = 1` para acionar `core_en` (`uo_out[7] = 1`).
-"
-        "3. **Estímulo AER e telemetria:** Alternar `ui_in[2]` (`0` ou `1`) e pulsar `ui_in[1] = 1`, verificando os disparos em `uo_out[0]` (`aer_out_valid`), o endereço em `uo_out[2:1]` e a contagem acumulada em `uo_out[6:3]`."
-    )
-
+    st.markdown("""
+1. **Alimentação e desacoplamento:** Soldar capacitores de `100 nF` o mais próximo possível dos pinos de alimentação e `10 µF` na entrada da placa antes de energizar.
+2. **Reset e habilitação:** Manter `rst_n` em `0` por alguns ciclos de clock e, em seguida, subir para `1`; ajustar `ena = 1` e `ui_in[0] = 1` para acionar `core_en` (`uo_out[7] = 1`).
+3. **Estímulo AER e telemetria:** Alternar `ui_in[2]` (`0` ou `1`) e pulsar `ui_in[1] = 1`, verificando os disparos em `uo_out[0]` (`aer_out_valid`), o endereço em `uo_out[2:1]` e a contagem acumulada em `uo_out[6:3]`.
+""")
     st.markdown("### 4. Checklist de Artefatos Prontos para Bancada")
     artifacts_check = [
         ("build/neurochip_ice40.bin", "Bitstream Lattice iCE40-HX1K (32 KB)"),
@@ -529,6 +548,8 @@ with tab5:
         "docs/info.md",
         "rtl/config.json",
         "build/pnr_ice40.rpt",
+        "build/gds_artifacts/neurochip-snn-gdsii/tt_um_neurochip_snn.gds",
+        "build/gds_artifacts/neurochip-snn-gdsii/metrics.csv",
     ]
     for idx, fname in enumerate(download_candidates):
         fp = ROOT / fname
