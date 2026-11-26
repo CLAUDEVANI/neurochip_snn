@@ -1,76 +1,84 @@
-# NeuroChip SNN
+# NeuroChip SNN — Núcleo Neuromórfico (LIF + STDP + AER)
 
-Núcleo neuromórfico baseado em **Spiking Neural Networks (SNN)** implementado em Verilog RTL sintetizável, com neurônios **LIF** (*Leaky Integrate-and-Fire*), plasticidade sináptica **STDP** (*Spike-Timing-Dependent Plasticity*), roteamento **AER** (*Address-Event Representation*), telemetria de spikes em hardware e fluxos para **Tiny Tapeout (ASIC Sky130)** e **FPGAs Lattice (iCE40 / ECP5)**.
+Implementação completa em Verilog RTL de um processador neuromórfico baseado em **Spiking Neural Network (SNN)** com neurônios **LIF (Leaky Integrate-and-Fire)**, plasticidade sináptica **STDP**, roteamento **AER (Address-Event Representation)**, fluxo completo de **ASIC Sky130 (Tiny Tapeout `1×2`)**, **FPGA PnR (`iCE40` e `ECP5`)**, **layout PCB de bancada** e **dashboard interativo em Streamlit**.
 
-## Arquitetura RTL (`rtl/`)
+---
 
-| Módulo | Descrição |
-| :--- | :--- |
-| `lif_neuron.v` | Neurônio LIF de 8 bits com vazamento por deslocamento (`LEAK_SHIFT = 3`), limiar configurável (`V_TH = 100`) e reset assíncrono. |
-| `stdp_synapse.v` | Sinapse com aprendizado local STDP (LTP/LTD), traços pré/pós-sinápticos e saturação segura em `MAX_W = 127`. |
-| `snn_layer.v` | Camada totalmente conectada (2 entradas x 4 neurônios LIF + 8 sinapses STDP). |
-| `snn_multilayer.v` | Rede multicamada em cascata (`L1` oculta -> `L2` saída). |
-| `aer_top.v` | Codificador/decodificador AER com fila de eventos pendentes. |
-| `tt_um_neurochip_snn.v` | Top-level compatível com o Tiny Tapeout (`50 MHz`, tile `1x2`) com contador de telemetria (`spike_cnt[3:0]`) e status `core_en`. |
+## 1. Resumo Técnico & Signoff
 
-## Mapa de Pinos (`tt_um_neurochip_snn`)
-
-| Pino | Direção | Função |
+| Frente | Alvo / Ferramenta | Resultado Consolidado |
 | :--- | :--- | :--- |
-| `ui_in[0]` | Entrada | `en` — Habilitação do núcleo (combinada com `ena`) |
-| `ui_in[1]` | Entrada | `aer_in_valid` — Pulso de evento AER de entrada |
-| `ui_in[2]` | Entrada | `aer_in_addr` — Endereço do canal de entrada (`0` ou `1`) |
-| `uo_out[0]` | Saída | `aer_out_valid` — Indica disparo AER de saída |
-| `uo_out[2:1]` | Saída | `aer_out_addr[1:0]` — Endereço do neurônio que disparou |
-| `uo_out[6:3]` | Saída | `spike_cnt[3:0]` — Contador de telemetria de spikes (módulo 16) |
-| `uo_out[7]` | Saída | `core_en` — Status de operação do núcleo |
-| `uio[7:0]` | Bidirecional | Mantidos em entrada / alta impedância (`uio_oe = 8'h00`, `uio_out = 8'h00`) |
+| **ASIC (Sky130 / OpenLane)** | Tiny Tapeout `1×2` (`tt_um_neurochip_snn`) | Área `161.0 × 225.76 µm` (`0.03635 mm²`), `4.058` células, **0 violações Magic DRC**, `WNS = 0.0 ns`, `TNS = 0.0 ns` @ **50 MHz** (`tt_um_neurochip_snn.gds` — 3.9 MB) |
+| **FPGA iCE40** | Yosys + nextpnr-ice40 (14 pinos fixos) | `572` LUT4, `172` FFs, `759/1280` LCs (`59%`), **`96.26 MHz`** (PASS @ 12 MHz) → `build/neurochip_ice40.bin` |
+| **FPGA ECP5** | Yosys + nextpnr-ecp5 (14 pinos fixos) | `408` LUT4, `164` CCU2C, `172` FFs (`3%`), **`103.42 MHz`** (PASS @ 25 MHz) → `build/neurochip_ecp5.bit` |
+| **Release & Submissão** | GitHub Release `v1.0.0` + `build/tt_submission/` | GDSII, bitstreams, métricas e pacote `build/tt_submission_1x2.tar.gz` prontos para o template oficial |
 
-## Resumo de Síntese e Place & Route
+---
 
-| Alvo / Ferramenta | Top Module | Recursos / Ocupação | Frequência Máx. | Artefatos |
-| :--- | :--- | :--- | :--- | :--- |
-| **ASIC (Yosys)** | `tt_um_neurochip_snn` | 1689 células, 172 FFs | 50 MHz (nominal) | `build/synth_tt.rpt` |
-| **ASIC (Yosys)** | `snn_multilayer` | 3302 células, 328 FFs | — | `build/synth_multi.rpt` |
-| **FPGA iCE40-HX1K** | `tt_um_neurochip_snn` | 572 `SB_LUT4`, 286 `SB_CARRY`, 759/1280 LC (`59%`) | 96.26 MHz (pós-PnR, 14 pinos fixos) | `build/neurochip_ice40.json`, `build/neurochip_ice40.bin`, `build/pnr_ice40.rpt` |
-| **FPGA ECP5-25F** | `tt_um_neurochip_snn` | 408 `LUT4`, 164 `CCU2C`, 172 `TRELLIS_FF`, 902 `TRELLIS_COMB` (`3%`) | 103.42 MHz (pós-PnR, 14 pinos fixos) | `build/neurochip_ecp5.json`, `build/neurochip_ecp5.bit`, `build/pnr_ecp5.rpt` |
-| **ASIC Sky130 (OpenLane)** | `tt_um_neurochip_snn` | Tile `1x2` (`0.03635 mm²`), 4058 células, 0 viol. Magic DRC | 50 MHz (`WNS=0.0`, `TNS=0.0`) | `tt_um_neurochip_snn.gds` (3.9 MB), `metrics.csv` |
+## 2. Layout Físico do Silício (GDSII — Sky130 `1×2`)
 
-## Execução Unificada (`./neurochip_snn.sh`)
+![Layout Físico GDSII Sky130 1x2](docs/gds_die_layout.png)
 
-    ./neurochip_snn.sh help          # Lista todos os comandos disponíveis
-    ./neurochip_snn.sh sim-all       # Roda pytest + sim-top, sim-real, sim-multi, sim-corner e sim-tt
-    ./neurochip_snn.sh synth-fpga    # Sintetiza para Lattice iCE40 e ECP5 no Yosys
-    ./neurochip_snn.sh synth-all     # Executa sínteses ASIC + FPGA e salva build/*.rpt
-    ./neurochip_snn.sh pnr-ice40     # Place & Route (iCE40-HX1K) + gera build/neurochip_ice40.bin
-    ./neurochip_snn.sh pnr-ecp5      # Place & Route (ECP5-25F) + gera build/neurochip_ecp5.bit
-    ./neurochip_snn.sh pnr-all       # Executa Place & Route + bitstreams para iCE40 e ECP5
-    ./neurochip_snn.sh ci            # Pipeline completo (sim-all + synth-all)
-    ./neurochip_snn.sh dashboard     # Abre o painel interativo em Streamlit (tema escuro)
-    ./neurochip_snn.sh clean         # Limpa artefatos temporários em build/
+---
 
-## Dashboard Interativo (`sim/dashboard_snn.py`)
+## 3. Esquema Eletrônico & Layout PCB de Bancada
 
-Configurado com tema escuro técnico em `.streamlit/config.toml` e barra lateral de controle, organizado em **5 abas**:
-1. **Sinal Elétrico & Spikes AER:** Sinal de referência (60 Hz + janela sombreada de surto nos ciclos 80-120), *raster plot* de spikes AER e distribuição por neurônio.
-2. **Rede Multicamada (L1 vs L2):** Propagação de disparos entre camada oculta (`L1`) e saída (`L2`) com gráfico de barras e *heatmap* binário.
-3. **Síntese ASIC & FPGA (Yosys):** Comparativo de células/fios, barras de ocupação em placas FPGA reais (`iCE40-HX1K`, `iCE40-UP5K`, `ECP5-25F`) e relatórios brutos.
-4. **Hardware & Produção Externa:** Alternância entre visualização de hardware em placa Tiny Tapeout (`docs/hardware_render.png`) e diagrama de pinos/*floorplan*, tabela de ocupação em placas FPGAs e download dos arquivos de configuração/netlists.
-5. **Prototipagem (FPGA & Tiny Tapeout):** Métricas de `Fmax` pós-PnR, diagrama esquemático de montagem em bancada, lista de componentes (BOM), passo a passo de validação física, signoff físico Sky130 (`metrics.csv`), checklist de artefatos e download direto dos bitstreams e do `.gds`.
+![Layout PCB NeuroChip SNN](docs/esquema_eletronico_snn.svg)
 
-## Pinagem Física FPGA (`fpga/`)
+### Pinagem Principal (`tt_um_neurochip_snn`)
 
-- `fpga/constraints_ice40.pcf`: mapeamento de referência para **Lattice iCE40-HX1K (TQ144 / iCEstick)**.
-- `fpga/constraints_ecp5.lpf`: mapeamento de referência para **Lattice ECP5-25F (CABGA381 / ULX3S)**.
+| Sinal | Direção | Função no Hardware |
+| :--- | :---: | :--- |
+| `clk` | Entrada | Clock principal (`50 MHz` ASIC / `12–25 MHz` FPGA) |
+| `rst_n` | Entrada | Reset assíncrono ativo em nível baixo (`SW_RST` + pull-up `R1 = 10 kΩ`) |
+| `ena` | Entrada | Habilitação do tile Tiny Tapeout (ligado em `+3.3V`) |
+| `ui_in[0]` | Entrada | `core_en` — habilita o núcleo SNN (`S0` + pull-down `R2 = 10 kΩ`) |
+| `ui_in[1]` | Entrada | `aer_in_valid` — pulso de evento AER (`S1` + pull-down `R3 = 10 kΩ`) |
+| `ui_in[2]` | Entrada | `aer_in_addr` — endereço do canal de entrada (`S2` + pull-down `R4 = 10 kΩ`) |
+| `uo_out[0]` | Saída | `aer_out_valid` — detecção de spike (`R5 = 330 Ω` → `LED0`) |
+| `uo_out[2:1]` | Saída | `aer_out_addr[1:0]` — endereço do neurônio disparado (`R6..R7` → `LED1..LED2`) |
+| `uo_out[6:3]` | Saída | `spike_cnt[3:0]` — contador de spikes de 4 bits (`R8` → `LED3..LED6`) |
+| `uo_out[7]` | Saída | Status `core_en` ativo (`R9 = 330 Ω` → `LED7`) |
 
-## Tiny Tapeout & CI/CD
+### Lista de Materiais (BOM — Bancada / PCB)
 
-- **Metadados e documentação:** `info.yaml` e `docs/info.md`.
-- **Configuração física (OpenLane / Sky130):** `rtl/config.json` (`161.0 x 225.76 µm`, `50 MHz`).
-- **Workflows do GitHub Actions:**
-  - `.github/workflows/ci.yml`: valida sintaxe do dashboard, constraints FPGA/TT e executa `./neurochip_snn.sh sim-all` + `./neurochip_snn.sh synth-all` em pushes/PRs na `main` e publica os relatórios do Yosys.
-  - `.github/workflows/gds.yml`: workflow manual (`workflow_dispatch`) para geração de GDSII via OpenLane/Docker.
+| Bloco | Componentes | Função |
+| :--- | :--- | :--- |
+| **Alimentação** | `U2` AMS1117-3.3, `C1` 10 µF, `C2` 10 µF, `C3` 100 nF, `R0` 330 Ω, `LED_PWR` | Regulação `5V → 3.3V`, filtragem, desacoplamento do CI e indicação de energia |
+| **Clock & Reset** | `X1` Oscilador 50 MHz CMOS 3.3V, `SW_RST`, `R1` 10 kΩ | Geração de clock e circuito de reset ativo-baixo |
+| **Entradas AER** | `S0`, `S1`, `S2` (chaves/botões) + `R2`, `R3`, `R4` (10 kΩ) | Injeção manual de estímulos AER com pull-down |
+| **Telemetria** | `LED0..LED7` + resistores limitadores `330 Ω` (`R5..R9`) | Visualização em tempo real de spikes, endereços e status |
+| **Depuração** | `J1` Barra de pinos 2.54 mm (`CLK, RST, UI0, UO0, 3V3, GND`) | Conexão direta para analisador lógico (Saleae / PulseView) |
 
-## Layout Físico ASIC (Sky130 — Tile 1×2)
+---
 
-![Layout físico GDSII do NeuroChip SNN no Sky130](docs/gds_die_layout.png)
+## 4. Dashboard Interativo (Streamlit — 6 Abas)
+
+O painel `sim/dashboard_snn.py` integra simulação SNN, análise de spikes, signoff físico (`metrics.csv` + `docs/gds_die_layout.png`), esquema PCB (`docs/esquema_eletronico_snn.svg`) e exportação de relatório técnico (`.md`).
+
+```bash
+cd ~/neurochip_snn
+source .venv/bin/activate
+streamlit run sim/dashboard_snn.py
+```
+
+---
+
+## 5. Compilação, Simulação & Gravação em FPGA
+
+```bash
+# Simulação RTL, síntese e PnR completos (iCE40 + ECP5)
+./neurochip_snn.sh sim-all
+./neurochip_snn.sh synth-all
+./neurochip_snn.sh pnr-all
+
+# Gravação em hardware (com a placa conectada na USB)
+iceprog build/neurochip_ice40.bin
+openFPGALoader -b <sua_placa_ecp5> build/neurochip_ecp5.bit
+```
+
+---
+
+## 6. Submissão Tiny Tapeout (`1×2`)
+
+O pacote `build/tt_submission_1x2.tar.gz` contém `info.yaml` (`tiles: "1x2"`, `top_module: "tt_um_neurochip_snn"`, `clock_hz: 50000000`), `src/` e `docs/info.md` prontos para extração na raiz do repositório criado a partir do template oficial (`TinyTapeout/ttsky-verilog-template`).
