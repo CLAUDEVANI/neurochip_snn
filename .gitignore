@@ -10,3 +10,5 @@ build/
 *.svg
 *.out.agents/
 .agents/
+sim_build/
+results.xml
