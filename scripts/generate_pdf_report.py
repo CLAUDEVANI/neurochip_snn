@@ -44,21 +44,21 @@ html = f"""<!DOCTYPE html>
 </style>
 </head>
 <body>
-  <h1>NeuroChip SNN (v1.0.0) — Relatório Técnico de Signoff & Hardware</h1>
-  <p><strong>Top Module:</strong> <code>tt_um_neurochip_snn</code> | <strong>Arquitetura:</strong> LIF + STDP + AER</p>
+  <h1>NeuroChip SNN (v1.0.0) — Relatório Técnico de Aprovação e Hardware</h1>
+  <p><strong>Módulo Principal:</strong> <code>tt_um_neurochip_snn</code> | <strong>Arquitetura:</strong> LIF + STDP + AER</p>
 
-  <h2>1. Métricas Consolidadas (ASIC & FPGA)</h2>
+  <h2>1. Métricas Consolidadas (ASIC e FPGA)</h2>
   <table>
-    <tr><th>Alvo</th><th>Recursos / Área</th><th>Frequência / Timing</th><th>Status</th></tr>
+    <tr><th>Alvo</th><th>Recursos / Área</th><th>Frequência / Temporização</th><th>Situação</th></tr>
     <tr><td>ASIC Sky130 (1×2)</td><td>161.0 × 225.76 µm | 4.058 células</td><td>50 MHz (WNS=0.0, TNS=0.0)</td><td>0 DRC</td></tr>
-    <tr><td>FPGA iCE40</td><td>572 LUT4 | 172 FFs | 759/1280 LCs</td><td>96.26 MHz (PASS @ 12 MHz)</td><td>0 Erros</td></tr>
-    <tr><td>FPGA ECP5</td><td>408 LUT4 | 164 CCU2C | 172 FFs</td><td>103.42 MHz (PASS @ 25 MHz)</td><td>0 Erros</td></tr>
+    <tr><td>FPGA iCE40</td><td>572 LUT4 | 172 FFs | 759/1280 LCs</td><td>96.26 MHz (Aprovado a 12 MHz)</td><td>0 Erros</td></tr>
+    <tr><td>FPGA ECP5</td><td>408 LUT4 | 164 CCU2C | 172 FFs</td><td>103.42 MHz (Aprovado a 25 MHz)</td><td>0 Erros</td></tr>
   </table>
 
-  <h2>2. Layout Físico GDSII (Sky130 1×2)</h2>
+  <h2>2. Leiaute Físico GDSII (Sky130 1×2)</h2>
   <div class="img-box"><img src="file://{(ROOT / 'docs/gds_die_layout.png').as_posix()}"></div>
 
-  <h2>3. Layout PCB de Bancada (Rev 1.1)</h2>
+  <h2>3. Leiaute PCB de Bancada (Rev 1.1)</h2>
   <div class="img-box"><img src="file://{(ROOT / 'docs/esquema_eletronico_snn.svg').as_posix()}"></div>
 
   <h2>4. Integridade Criptográfica dos Artefatos (SHA-256)</h2>

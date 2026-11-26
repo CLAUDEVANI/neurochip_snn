@@ -24,7 +24,7 @@ def apply_dark_layout(fig, height=450, title=""):
 
 
 st.set_page_config(page_title="NeuroChip SNN — Monitor Neuromórfico", layout="wide")
-st.title("NeuroChip SNN — Monitor de Spikes, Síntese ASIC/FPGA e Produção de Hardware")
+st.title("NeuroChip SNN — Monitor de Disparos, Síntese ASIC/FPGA e Produção de Hardware")
 
 
 def run_cmd(arg: str):
@@ -106,8 +106,8 @@ def parse_yosys_report(path: Path):
 
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "Sinal Elétrico & Spikes AER",
-    "Rede Multicamada (L1 vs L2)",
+    "Sinal Elétrico & Disparos AER",
+    "2. Rede Multicamada (L1 vs. L2)",
     "Síntese ASIC & FPGA (Yosys)",
     "Hardware & Produção Externa",
     "Prototipagem (FPGA & Tiny Tapeout)",
@@ -115,7 +115,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 with tab1:
-    if st.button("Executar Simulação AER (sim-real)", type="primary") or "real_df" not in st.session_state:
+    if st.button("Executar Simulação AER (Sinal Real)", type="primary") or "real_df" not in st.session_state:
         df_s, out_s, err_s = run_real_sim()
         st.session_state["real_df"] = df_s
         st.session_state["real_log"] = out_s + ("\n" + err_s if err_s else "")
@@ -124,13 +124,13 @@ with tab1:
     df_sig = build_reference_signal()
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("Total de Spikes AER", len(df_spikes))
+    c1.metric("Total de Disparos AER", len(df_spikes))
     c2.metric("Neurônios Ativos", df_spikes["neurônio"].nunique() if not df_spikes.empty else 0)
     c3.metric("Taxa Média (spikes/200 ciclos)", f"{len(df_spikes)/200:.2f}")
 
     fig = make_subplots(
         rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
-        subplot_titles=("Sinal Elétrico de Referência (60 Hz + Surto)", "Raster Plot de Spikes AER"),
+        subplot_titles=("Sinal Elétrico de Referência (60 Hz + Surto)", "Gráfico de Disparos AER (Raster)"),
     )
     fig.add_trace(go.Scatter(x=df_sig["ciclo"], y=df_sig["tensao_pu"], mode="lines", name="Tensão (pu)"), row=1, col=1)
     if not df_spikes.empty:
@@ -138,7 +138,7 @@ with tab1:
             go.Scatter(
                 x=df_spikes["ciclo"], y=df_spikes["neurônio"],
                 mode="markers", marker=dict(size=9, symbol="line-ns-open", line=dict(width=2)),
-                name="Spikes AER",
+                name="Disparos AER",
             ),
             row=2, col=1,
         )
@@ -411,7 +411,7 @@ with tab5:
     p3_m.metric("Alvo Tiny Tapeout", "50 MHz (1×2)")
     p4_m.metric("Células ASIC", r_tt["cells"] if r_tt else 1689)
 
-    st.markdown("### 0. Signoff Físico ASIC (Sky130 / OpenLane)")
+    st.markdown("### 0. Aprovação Física (Aprovação (Signoff)) ASIC (Sky130 / OpenLane)")
     gds_dir = ROOT / "build" / "gds_artifacts" / "neurochip-snn-gdsii"
     m_csv, gds_f = gds_dir / "metrics.csv", gds_dir / "tt_um_neurochip_snn.gds"
     if m_csv.exists():
@@ -615,7 +615,7 @@ with tab6:
     st.markdown("### Exportar Resumo Técnico")
     resumo_md = f"""# NeuroChip SNN (v1.0.0) — Resumo Técnico
 - **Top Module:** `tt_um_neurochip_snn` (Tiny Tapeout `1×2`, Sky130)
-- **Área & Signoff ASIC:** `161.0 × 225.76 µm` (`0.03635 mm²`), `4.058` células, `0` violações Magic DRC, `WNS=0.0 / TNS=0.0` @ 50 MHz
+- **Área & Aprovação (Signoff) ASIC:** `161.0 × 225.76 µm` (`0.03635 mm²`), `4.058` células, `0` violações Magic DRC, `WNS=0.0 / TNS=0.0` @ 50 MHz
 - **FPGA PnR:** iCE40 (`96.26 MHz`) e ECP5 (`103.42 MHz`) com 14 pinos fixos
 - **Hardware:** Regulação `5V → 3.3V`, clock `50 MHz`, entradas AER (`ui_in[2:0]`), LEDs + resistores `330 Ω` (`uo_out[7:0]`) e header `J1`
 """
