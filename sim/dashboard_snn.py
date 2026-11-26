@@ -611,3 +611,17 @@ with tab6:
         {"Bloco": "Depuração", "Componente": "Barra de pinos 2×8 (2.54 mm)", "Função": "Acesso rápido para analisador lógico (Saleae / PulseView)"},
     ])
     st.dataframe(bom_df, use_container_width=True, hide_index=True)
+
+    st.markdown("### Exportar Resumo Técnico")
+    resumo_md = f"""# NeuroChip SNN (v1.0.0) — Resumo Técnico
+- **Top Module:** `tt_um_neurochip_snn` (Tiny Tapeout `1×2`, Sky130)
+- **Área & Signoff ASIC:** `161.0 × 225.76 µm` (`0.03635 mm²`), `4.058` células, `0` violações Magic DRC, `WNS=0.0 / TNS=0.0` @ 50 MHz
+- **FPGA PnR:** iCE40 (`96.26 MHz`) e ECP5 (`103.42 MHz`) com 14 pinos fixos
+- **Hardware:** Regulação `5V → 3.3V`, clock `50 MHz`, entradas AER (`ui_in[2:0]`), LEDs + resistores `330 Ω` (`uo_out[7:0]`) e header `J1`
+"""
+    st.download_button(
+        "Exportar Relatório Técnico (.md)",
+        data=resumo_md.encode("utf-8"),
+        file_name="neurochip_snn_relatorio_v1.0.0.md",
+        mime="text/markdown",
+    )
