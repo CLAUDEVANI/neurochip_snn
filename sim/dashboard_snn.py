@@ -146,7 +146,7 @@ with tab1:
     fig.update_yaxes(title_text="Neurônio", dtick=1, row=2, col=1)
     fig.update_xaxes(title_text="Ciclo", row=2, col=1)
     fig.update_layout(height=520)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     if not df_spikes.empty:
         counts = df_spikes["neuronio"].value_counts().sort_index()
@@ -177,7 +177,7 @@ with tab2:
             yaxis_title="Quantidade de Neurônios Disparando",
             height=420,
         )
-        st.plotly_chart(fig_m, use_container_width=True)
+        st.plotly_chart(fig_m, width="stretch")
 
     with st.expander("Log bruto da simulação Multicamada"):
         st.code(st.session_state["multi_log"], language="text")
@@ -217,7 +217,7 @@ with tab3:
             yaxis_title="Quantidade",
             height=380,
         )
-        st.plotly_chart(fig_cmp, use_container_width=True)
+        st.plotly_chart(fig_cmp, width="stretch")
 
     st.subheader("Recursos Detalhados em FPGA")
     fpga_col1, fpga_col2 = st.columns(2)
@@ -236,7 +236,7 @@ with tab3:
                 textposition="auto",
             ))
             fig_i.update_layout(title="Distribuição de Primitivas — iCE40", height=320)
-            st.plotly_chart(fig_i, use_container_width=True)
+            st.plotly_chart(fig_i, width="stretch")
         else:
             st.info("Rode `./neurochip_snn.sh synth-ice40` para gerar as métricas.")
 
@@ -254,7 +254,7 @@ with tab3:
                 textposition="auto",
             ))
             fig_e.update_layout(title="Distribuição de Primitivas — ECP5", height=320)
-            st.plotly_chart(fig_e, use_container_width=True)
+            st.plotly_chart(fig_e, width="stretch")
         else:
             st.info("Rode `./neurochip_snn.sh synth-ecp5` para gerar as métricas.")
 
@@ -289,7 +289,7 @@ with tab4:
             st.image(
                 str(render_path),
                 caption="Protótipo final — ASIC tt_um_neurochip_snn (QFN-64, Sky130 130 nm) montado em placa Tiny Tapeout",
-                use_container_width=True,
+                width="stretch",
             )
         else:
             st.warning("Arquivo `docs/hardware_render.png` não encontrado.")
@@ -341,7 +341,7 @@ with tab4:
         fig_chip.update_xaxes(range=[0, 10], visible=False)
         fig_chip.update_yaxes(range=[0.2, 9.6], visible=False)
         apply_dark_layout(fig_chip, height=460)
-        st.plotly_chart(fig_chip, use_container_width=True)
+        st.plotly_chart(fig_chip, width="stretch")
 
     st.subheader("Estimativa de Ocupação em Placas FPGA Reais")
     ice_luts = r_ice40["SB_LUT4"] if r_ice40 else 572
@@ -351,7 +351,7 @@ with tab4:
         {"Placa / FPGA": "Lattice iCE40-UP5K (UPduino)", "LUTs Disponíveis": 5280, "LUTs Usadas": ice_luts, "Ocupação (%)": round(100 * ice_luts / 5280, 1)},
         {"Placa / FPGA": "Lattice ECP5-25F (ULX3S / OrangeCrab)", "LUTs Disponíveis": 24288, "LUTs Usadas": ecp_luts, "Ocupação (%)": round(100 * ecp_luts / 24288, 1)},
     ])
-    st.dataframe(df_boards, use_container_width=True, hide_index=True)
+    st.dataframe(df_boards, width="stretch", hide_index=True)
 
     st.subheader("Produção Externa (Tiny Tapeout GDSII & Bitstream FPGA)")
     p1, p2 = st.columns(2)
@@ -429,13 +429,13 @@ with tab5:
                 {"Métrica": "Células pré-ABC", "Valor": str(int(r.get("cells_pre_abc", 0)))},
                 {"Métrica": "Trilhas (µm)", "Valor": str(int(r.get("wire_length", 0)))},
                 {"Métrica": "GDSII", "Valor": f"{gds_f.stat().st_size/1048576:.2f} MB" if gds_f.exists() else "—"},
-            ]), use_container_width=True, hide_index=True)
+            ]), width="stretch", hide_index=True)
     else:
         st.info("`metrics.csv` ainda não baixado em `build/gds_artifacts/neurochip-snn-gdsii/`.")
 
     gds_img = ROOT / "docs" / "gds_die_layout.png"
     if gds_img.exists():
-        st.image(str(gds_img), caption="Layout físico GDSII — tt_um_neurochip_snn (Sky130, tile 1×2, 0 DRC)", use_container_width=True)
+        st.image(str(gds_img), caption="Layout físico GDSII — tt_um_neurochip_snn (Sky130, tile 1×2, 0 DRC)", width="stretch")
 
     st.markdown("### 1. Esquema de Montagem & Interligação de Bancada")
 
@@ -487,7 +487,7 @@ with tab5:
     fig_asm.update_xaxes(range=[0, 10], visible=False)
     fig_asm.update_yaxes(range=[0.8, 9.2], visible=False)
     apply_dark_layout(fig_asm, height=450, title="Diagrama Esquemático de Montagem em Bancada")
-    st.plotly_chart(fig_asm, use_container_width=True)
+    st.plotly_chart(fig_asm, width="stretch")
 
     st.markdown("### 2. Lista de Componentes (BOM de Bancada)")
     bom_df = pd.DataFrame([
@@ -499,7 +499,7 @@ with tab5:
         {"Qtd": "8", "Item": "LEDs + Resistores", "Especificação": "LEDs SMD/THT + resistores limitadores 330Ω–1kΩ", "Função": "Monitorar uo_out[0] (valid), [2:1] (addr), [6:3] (spike_cnt) e [7] (core_en)"},
         {"Qtd": "2×12", "Item": "Barras de Pinos (Headers)", "Especificação": "Passo 2,54 mm (macho/fêmea)", "Função": "Conexão com analisador lógico, osciloscópio ou gravador FPGA"},
     ])
-    st.dataframe(bom_df, use_container_width=True, hide_index=True)
+    st.dataframe(bom_df, width="stretch", hide_index=True)
 
     st.markdown("### 3. Passo a Passo de Montagem e Validação Física")
     st.markdown("""
@@ -528,7 +528,7 @@ with tab5:
             "Status": "Pronto" if exists else "Pendente",
             "Tamanho": size_kb,
         })
-    st.dataframe(pd.DataFrame(chk_rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(chk_rows), width="stretch", hide_index=True)
 
     st.markdown("### 5. Comandos de Gravação em Placa FPGA & Fluxo Tiny Tapeout")
     c_fpga, c_tt = st.columns(2)
@@ -577,7 +577,7 @@ with tab5:
                 data=fp.read_bytes(),
                 file_name=fp.name,
                 key=f"proto_dl_{fname}",
-                use_container_width=True,
+                width="stretch",
             )
         else:
             col.caption(f"`{fname}` ainda não gerado.")
@@ -610,7 +610,7 @@ with tab6:
         {"Bloco": "Saídas Telemetria", "Componente": "8× LEDs (3mm/5mm) + 8× Resistores 330 Ω", "Função": "Exibe `uo_out[0]` (spike), `[2:1]` (addr), `[6:3]` (contador) e `[7]` (status)"},
         {"Bloco": "Depuração", "Componente": "Barra de pinos 2×8 (2.54 mm)", "Função": "Acesso rápido para analisador lógico (Saleae / PulseView)"},
     ])
-    st.dataframe(bom_df, use_container_width=True, hide_index=True)
+    st.dataframe(bom_df, width="stretch", hide_index=True)
 
     st.markdown("### Exportar Resumo Técnico")
     resumo_md = f"""# NeuroChip SNN (v1.0.0) — Resumo Técnico
