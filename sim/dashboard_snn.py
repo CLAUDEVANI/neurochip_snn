@@ -40,14 +40,14 @@ def run_cmd(arg: str):
 def run_real_sim():
     proc = run_cmd("sim-real")
     spikes = []
-    pattern = re.compile(r"ciclo=\s*(\d+)\s*\|\s*t=(\d+)\s*\|\s*SPIKE AER OUT -> Neuronio\s*(\d+)")
+    pattern = re.compile(r"ciclo=\s*(\d+)\s*\|\s*t=(\d+)\s*\|\s*SPIKE AER OUT -> Neurônio\s*(\d+)")
     for line in proc.stdout.splitlines():
         m = pattern.search(line)
         if m:
             spikes.append({
                 "ciclo": int(m.group(1)),
                 "tempo_ps": int(m.group(2)),
-                "neuronio": int(m.group(3)),
+                "neurônio": int(m.group(3)),
             })
     return pd.DataFrame(spikes), proc.stdout, proc.stderr
 
@@ -55,7 +55,7 @@ def run_real_sim():
 def run_multi_sim():
     proc = run_cmd("sim-multi")
     rows = []
-    pattern = re.compile(r"t=(\d+)\s*\|\s*L1\(oculta\)=([01]{4})\s*\|\s*L2\(saida\)=([01]{4})")
+    pattern = re.compile(r"t=(\d+)\s*\|\s*L1\(oculta\)=([01]{4})\s*\|\s*L2\(saída\)=([01]{4})")
     for line in proc.stdout.splitlines():
         m = pattern.search(line)
         if m:
@@ -125,7 +125,7 @@ with tab1:
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Total de Spikes AER", len(df_spikes))
-    c2.metric("Neurônios Ativos", df_spikes["neuronio"].nunique() if not df_spikes.empty else 0)
+    c2.metric("Neurônios Ativos", df_spikes["neurônio"].nunique() if not df_spikes.empty else 0)
     c3.metric("Taxa Média (spikes/200 ciclos)", f"{len(df_spikes)/200:.2f}")
 
     fig = make_subplots(
@@ -136,7 +136,7 @@ with tab1:
     if not df_spikes.empty:
         fig.add_trace(
             go.Scatter(
-                x=df_spikes["ciclo"], y=df_spikes["neuronio"],
+                x=df_spikes["ciclo"], y=df_spikes["neurônio"],
                 mode="markers", marker=dict(size=9, symbol="line-ns-open", line=dict(width=2)),
                 name="Spikes AER",
             ),
@@ -149,7 +149,7 @@ with tab1:
     st.plotly_chart(fig, width="stretch")
 
     if not df_spikes.empty:
-        counts = df_spikes["neuronio"].value_counts().sort_index()
+        counts = df_spikes["neurônio"].value_counts().sort_index()
         st.bar_chart(counts)
 
     with st.expander("Log bruto da simulação AER"):
@@ -425,7 +425,7 @@ with tab5:
             s4.metric("Magic DRC", f"{int(r.get('Magic_violations', 0))} viol.")
             s5.metric("WNS / TNS", f"{r.get('wns', 0.0)} / {r.get('tns', 0.0)}")
             st.dataframe(pd.DataFrame([
-                {"Métrica": "Core Area (µm²)", "Valor": f"{float(r.get('CoreArea_um^2', 0)):.2f}"},
+                {"Métrica": "Core Área (µm²)", "Valor": f"{float(r.get('CoreArea_um^2', 0)):.2f}"},
                 {"Métrica": "Células pré-ABC", "Valor": str(int(r.get("cells_pre_abc", 0)))},
                 {"Métrica": "Trilhas (µm)", "Valor": str(int(r.get("wire_length", 0)))},
                 {"Métrica": "GDSII", "Valor": f"{gds_f.stat().st_size/1048576:.2f} MB" if gds_f.exists() else "—"},

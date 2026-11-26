@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def sha256_file(path: Path) -> str:
     if not path.exists():
-        return "arquivo-nao-encontrado"
+        return "arquivo-não-encontrado"
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
