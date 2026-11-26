@@ -625,3 +625,12 @@ with tab6:
         file_name="neurochip_snn_relatorio_v1.0.0.md",
         mime="text/markdown",
     )
+
+    pdf_path = Path("docs/neurochip_snn_report_v1.0.0.pdf")
+    if pdf_path.exists():
+        st.download_button(
+            "Exportar Relatório Técnico Assinado (.pdf)",
+            data=pdf_path.read_bytes(),
+            file_name="neurochip_snn_report_v1.0.0.pdf",
+            mime="application/pdf",
+        )

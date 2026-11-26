@@ -1,0 +1,8 @@
+SIM ?= icarus
+TOPLEVEL_LANG ?= verilog
+VERILOG_SOURCES += $(PWD)/rtl/lif_neuron.v $(PWD)/rtl/stdp_synapse.v $(PWD)/rtl/snn_layer.v $(PWD)/rtl/aer_top.v $(PWD)/rtl/tt_um_neurochip_snn.v
+TOPLEVEL = tt_um_neurochip_snn
+MODULE = test_neurochip_cocotb
+PYTHONPATH := $(PWD)/tests:$(PYTHONPATH)
+export PYTHONPATH
+include $(shell cocotb-config --makefiles)/Makefile.sim
