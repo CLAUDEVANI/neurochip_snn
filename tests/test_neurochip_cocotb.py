@@ -5,13 +5,13 @@ from cocotb.triggers import RisingEdge, Timer
 @cocotb.test()
 async def test_neurochip_aer_spikes(dut):
     """Injeta rajada de eventos AER e valida ativação do núcleo e geração de spikes."""
-    cocotb.start_soon(Clock(dut.clk, 20, units="ns").start())  # 50 MHz
+    cocotb.start_soon(Clock(dut.clk, 20, unit="ns").start())  # 50 MHz
 
     dut.ena.value = 1
     dut.rst_n.value = 0
     dut.ui_in.value = 0
     dut.uio_in.value = 0
-    await Timer(100, units="ns")
+    await Timer(100, unit="ns")
 
     dut.rst_n.value = 1
     await RisingEdge(dut.clk)
